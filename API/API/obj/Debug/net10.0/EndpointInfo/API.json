@@ -1,0 +1,922 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "API | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://localhost:7232"
+    },
+    {
+      "url": "http://localhost:5151"
+    }
+  ],
+  "paths": {
+    "/api/Auth/municipios": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Catalogos/enfermedades": {
+      "get": {
+        "tags": [
+          "Catalogos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Catalogos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearEnfermedadDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearEnfermedadDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearEnfermedadDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Dashboard/kpis": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Dashboard/mapa-fincas": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Images/upload/{entityId}": {
+      "post": {
+        "tags": [
+          "Images"
+        ],
+        "parameters": [
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Sync/pull": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPullResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPullResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncPullResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Sync/push": {
+      "post": {
+        "tags": [
+          "Sync"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncPushRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncPushRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncPushRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/WeatherForecast": {
+      "get": {
+        "tags": [
+          "WeatherForecast"
+        ],
+        "operationId": "GetWeatherForecast",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherForecast"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnimalPushDto": {
+        "required": [
+          "identificacion"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fincaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "razaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "identificacion": {
+            "type": "string"
+          },
+          "sexo": {
+            "$ref": "#/components/schemas/SexoAnimal"
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Comarca": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "municipioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "municipio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Municipio"
+              }
+            ]
+          }
+        }
+      },
+      "CrearEnfermedadDto": {
+        "required": [
+          "nombre",
+          "descripcion"
+        ],
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "notificacionObligatoria": {
+            "type": "boolean"
+          },
+          "sintomas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Departamento": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Municipio"
+            }
+          }
+        }
+      },
+      "Enfermedad": {
+        "required": [
+          "nombre",
+          "descripcion"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "notificacionObligatoria": {
+            "type": "boolean"
+          },
+          "enfermedadSintomas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnfermedadSintoma"
+            }
+          },
+          "enfermedadMedicamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnfermedadMedicamento"
+            }
+          }
+        }
+      },
+      "EnfermedadMedicamento": {
+        "type": "object",
+        "properties": {
+          "enfermedadId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enfermedad": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Enfermedad"
+              }
+            ]
+          },
+          "medicamentoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "medicamento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Medicamento"
+              }
+            ]
+          },
+          "notasTratamiento": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "EnfermedadSintoma": {
+        "type": "object",
+        "properties": {
+          "enfermedadId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enfermedad": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Enfermedad"
+              }
+            ]
+          },
+          "sintomaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sintoma": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Sintoma"
+              }
+            ]
+          }
+        }
+      },
+      "FincaPushDto": {
+        "required": [
+          "nombre",
+          "comarca"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "municipioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "comarca": {
+            "type": "string"
+          },
+          "lat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lng": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
+      },
+      "JornadaOrdeno": {
+        "type": "integer"
+      },
+      "Medicamento": {
+        "required": [
+          "nombreComercial"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreComercial": {
+            "type": "string"
+          },
+          "principioActivo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tipo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "viaAdministracion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dosisSugerida": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "diasRetiroLeche": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "enfermedadMedicamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnfermedadMedicamento"
+            }
+          }
+        }
+      },
+      "Municipio": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "departamentoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "departamento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Departamento"
+              }
+            ]
+          },
+          "comarcas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comarca"
+            }
+          }
+        }
+      },
+      "ProduccionLechePushDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "animalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "jornada": {
+            "$ref": "#/components/schemas/JornadaOrdeno"
+          },
+          "volumenLitros": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "PropositoRaza": {
+        "type": "integer"
+      },
+      "Raza": {
+        "required": [
+          "nombre",
+          "origenGenetico",
+          "proposito"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "origenGenetico": {
+            "type": "string"
+          },
+          "proposito": {
+            "$ref": "#/components/schemas/PropositoRaza"
+          },
+          "descripcion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RegisterRequest": {
+        "required": [
+          "telefono",
+          "nombre",
+          "clave",
+          "comarca"
+        ],
+        "type": "object",
+        "properties": {
+          "telefono": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "clave": {
+            "type": "string"
+          },
+          "municipioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "comarca": {
+            "type": "string"
+          }
+        }
+      },
+      "RegistroSaludPushDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "animalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enfermedadId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fechaDeteccion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observaciones": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sintomasIdsMarcados": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "tratamientosNuevos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TratamientoPushDto"
+            }
+          }
+        }
+      },
+      "SexoAnimal": {
+        "type": "integer"
+      },
+      "Sintoma": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "enfermedadSintomas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnfermedadSintoma"
+            }
+          }
+        }
+      },
+      "SyncPullResponse": {
+        "type": "object",
+        "properties": {
+          "departamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Departamento"
+            }
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Municipio"
+            }
+          },
+          "comarcas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comarca"
+            }
+          },
+          "razas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Raza"
+            }
+          },
+          "enfermedades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Enfermedad"
+            }
+          },
+          "sintomas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sintoma"
+            }
+          },
+          "medicamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Medicamento"
+            }
+          }
+        }
+      },
+      "SyncPushRequest": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fincasNuevas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FincaPushDto"
+            }
+          },
+          "animalesNuevos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnimalPushDto"
+            }
+          },
+          "produccionLecheNuevos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProduccionLechePushDto"
+            }
+          },
+          "registrosSaludNuevos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistroSaludPushDto"
+            }
+          }
+        }
+      },
+      "TratamientoPushDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "medicamentoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dosis": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "WeatherForecast": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "temperatureC": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "temperatureF": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Catalogos"
+    },
+    {
+      "name": "Dashboard"
+    },
+    {
+      "name": "Images"
+    },
+    {
+      "name": "Sync"
+    },
+    {
+      "name": "WeatherForecast"
+    }
+  ]
+}

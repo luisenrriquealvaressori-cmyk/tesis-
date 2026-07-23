@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="WEB/web.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+</Solution>
