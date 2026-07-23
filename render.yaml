@@ -23,6 +23,9 @@ services:
     rootDir: WEB/web
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
     routes:
       - type: rewrite
         source: /*
