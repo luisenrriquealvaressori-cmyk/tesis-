@@ -1,7 +1,7 @@
 @echo off
 echo ===========================================
-echo   Configurando Repositorio y Publicando
-echo   Repository: git@github.com:luisenrriquealvaressori-cmyk/tesis-.git
+echo   Configurando Repositorio HTTPS y Publicando
+echo   Repository: https://github.com/luisenrriquealvaressori-cmyk/tesis-.git
 echo ===========================================
 
 cd /d "c:\PROYECTOS\PROYECTO TESIS\Ganadero"
@@ -12,23 +12,18 @@ if not exist .git (
     git branch -M main
 )
 
-echo [INFO] Configurando origen remoto...
+echo [INFO] Configurando origen remoto HTTPS...
 git remote remove origin 2>nul
-git remote add origin git@github.com:luisenrriquealvaressori-cmyk/tesis-.git
+git remote add origin https://github.com/luisenrriquealvaressori-cmyk/tesis-.git
 
 echo [INFO] Agregando archivos modificados...
 git add .
 
 echo [INFO] Creando commit...
-git commit -m "fix(mobile): corregir enum SexoAnimal, centralizar ApiConfig y alinear sincronizacion"
+git commit -m "fix(mobile): corregir enum SexoAnimal, centralizar ApiConfig y alinear sincronizacion" 2>nul
 
-echo [INFO] Subiendo cambios a GitHub (branch main)...
+echo [INFO] Subiendo cambios a GitHub (https://github.com/luisenrriquealvaressori-cmyk/tesis-.git)...
 git push -u origin main
-
-if %errorlevel% neq 0 (
-    echo [INFO] Intentando subida a branch master...
-    git push -u origin master
-)
 
 echo ===========================================
 echo   Publicacion en GitHub completada!
