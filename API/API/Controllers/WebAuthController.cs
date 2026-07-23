@@ -37,7 +37,8 @@ namespace API.Controllers
             public required string Nombre { get; set; }
             public required string Clave { get; set; }
             public string? Cargo { get; set; }
-            public RolUsuario Rol { get; set; } = RolUsuario.Supervisor;
+            /// <summary>1=Ganadero, 2=Supervisor (default), 3=Administrador</summary>
+            public int Rol { get; set; } = 2;
         }
 
         public class LoginWebRequest
@@ -72,12 +73,16 @@ namespace API.Controllers
             if (existe)
                 return Conflict(new { error = "Ya existe un usuario con ese correo electrónico." });
 
+            var rolSolicitado = Enum.IsDefined(typeof(RolUsuario), req.Rol)
+                ? (RolUsuario)req.Rol
+                : RolUsuario.Supervisor;
+
             var nuevoUsuario = new UsuarioWeb
             {
                 Email = req.Email.ToLower().Trim(),
                 Nombre = req.Nombre,
                 ClaveHash = BCrypt.Net.BCrypt.HashPassword(req.Clave),
-                Rol = hayAdmins ? req.Rol : RolUsuario.Administrador, // El primero siempre es Admin
+                Rol = hayAdmins ? rolSolicitado : RolUsuario.Administrador, // El primero siempre es Admin
                 Cargo = req.Cargo
             };
 

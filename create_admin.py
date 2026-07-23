@@ -31,7 +31,7 @@ def crear_admin():
         "email": email,
         "nombre": nombre,
         "clave": clave,
-        "rol": "Administrador",
+        "rol": 3,          # 1=Ganadero, 2=Supervisor, 3=Administrador
         "cargo": cargo
     }
 
