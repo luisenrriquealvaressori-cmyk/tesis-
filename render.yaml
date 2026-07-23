@@ -17,7 +17,7 @@ services:
         value: "AgroStatsApp"
 
   # ── WEB Frontend (React / Vite Static Site) ──
-  - type: static
+  - type: static_site
     name: tesis-web
     rootDir: WEB/web
     buildCommand: npm install && npm run build

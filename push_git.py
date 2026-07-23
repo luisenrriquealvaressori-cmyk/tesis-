@@ -9,7 +9,7 @@ print("STDOUT:", res1.stdout)
 print("STDERR:", res1.stderr)
 
 print("[2/3] Creando commit...")
-res2 = subprocess.run(["git", "commit", "-m", "fix(deploy): cambiar tipo de tesis-web a type: static en render.yaml"], capture_output=True, text=True)
+res2 = subprocess.run(["git", "commit", "-m", "fix(deploy): asignar type: static_site para tesis-web en render.yaml"], capture_output=True, text=True)
 print("STDOUT:", res2.stdout)
 print("STDERR:", res2.stderr)
 
