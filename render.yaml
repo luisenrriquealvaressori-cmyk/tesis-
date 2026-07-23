@@ -1,0 +1,31 @@
+services:
+  # ── API Backend (.NET 10 / C# / PostgreSQL) ──
+  - type: web
+    name: tesis-api
+    env: dotnet
+    rootDir: API/API
+    buildCommand: dotnet publish -c Release -o out
+    startCommand: dotnet out/API.dll
+    plan: free
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        value: "Host=ep-fancy-unit-axb2z72v.c-4.us-east-2.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_dM8UfQ0kTbWw;SSL Mode=Require;Trust Server Certificate=true;"
+      - key: Jwt__Key
+        value: "esta_es_una_clave_secreta_super_segura_para_el_proyecto_agro_stats_2026_xYz!#"
+      - key: Jwt__Issuer
+        value: "AgroStatsAPI"
+      - key: Jwt__Audience
+        value: "AgroStatsApp"
+
+  # ── WEB Frontend (React / Vite Static Site) ──
+  - type: web
+    name: tesis-web
+    env: static
+    rootDir: WEB/web
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
