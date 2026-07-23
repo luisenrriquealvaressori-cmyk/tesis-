@@ -3,13 +3,13 @@ import os
 
 os.chdir(r"c:\PROYECTOS\PROYECTO TESIS\Ganadero")
 
-print("[1/3] Agregando API.csproj y render.yaml...")
+print("[1/3] Agregando archivos modificados...")
 res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print("STDOUT:", res1.stdout)
 print("STDERR:", res1.stderr)
 
 print("[2/3] Creando commit...")
-res2 = subprocess.run(["git", "commit", "-m", "fix(deploy): ajustar TargetFramework a net9.0 en API.csproj y agregar NODE_VERSION 20 en render.yaml"], capture_output=True, text=True)
+res2 = subprocess.run(["git", "commit", "-m", "fix(web): corregir tipos TypeScript en AuthContext.tsx y remover useState sin uso en FarmMap.tsx para build limpio en Render"], capture_output=True, text=True)
 print("STDOUT:", res2.stdout)
 print("STDERR:", res2.stderr)
 
