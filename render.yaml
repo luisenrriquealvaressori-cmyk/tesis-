@@ -1,11 +1,10 @@
 services:
-  # ── API Backend (.NET 10 / C# / PostgreSQL) ──
+  # ── API Backend (.NET / C# / PostgreSQL) ──
   - type: web
     name: tesis-api
-    env: dotnet
+    runtime: docker
     rootDir: API/API
-    buildCommand: dotnet publish -c Release -o out
-    startCommand: dotnet out/API.dll
+    dockerfilePath: ./Dockerfile
     plan: free
     envVars:
       - key: ConnectionStrings__DefaultConnection
@@ -20,7 +19,7 @@ services:
   # ── WEB Frontend (React / Vite Static Site) ──
   - type: web
     name: tesis-web
-    env: static
+    runtime: static
     rootDir: WEB/web
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist

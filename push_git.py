@@ -3,25 +3,25 @@ import os
 
 os.chdir(r"c:\PROYECTOS\PROYECTO TESIS\Ganadero")
 
-print("[1/3] Ejecutando git add .")
+print("[1/3] Agregando render.yaml y Dockerfile...")
 res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print("STDOUT:", res1.stdout)
 print("STDERR:", res1.stderr)
 
-print("[2/3] Ejecutando git commit...")
-res2 = subprocess.run(["git", "commit", "-m", "feat(deploy): agregar render.yaml Blueprint para despliegue automatico en Render"], capture_output=True, text=True)
+print("[2/3] Creando commit...")
+res2 = subprocess.run(["git", "commit", "-m", "fix(deploy): corregir sintaxis de runtime en render.yaml a docker y static"], capture_output=True, text=True)
 print("STDOUT:", res2.stdout)
 print("STDERR:", res2.stderr)
 
-print("[3/3] Ejecutando git push origin main...")
+print("[3/3] Subiendo cambios a GitHub...")
 res3 = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
 print("STDOUT:", res3.stdout)
 print("STDERR:", res3.stderr)
 
 if res3.returncode == 0:
-    print("[Exito] render.yaml subido a GitHub!")
+    print("[SUCCESS] Cambios subidos exitosamente a GitHub!")
 else:
-    print("[Aviso] Intentando push con master...")
+    print("[INFO] Probando push a master...")
     res4 = subprocess.run(["git", "push", "origin", "master"], capture_output=True, text=True)
     print("STDOUT:", res4.stdout)
     print("STDERR:", res4.stderr)
