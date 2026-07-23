@@ -18,7 +18,7 @@ const Login = () => {
 
     try {
       const data = await loginApi(telefono, clave);
-      login(data.token, data.usuarioId, data.nombre);
+      login(data.token, data.usuarioId, data.nombre, data.rol);
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Credenciales incorrectas');

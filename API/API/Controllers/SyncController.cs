@@ -192,9 +192,13 @@ namespace API.Controllers
                             });
                         }
                         
+                        var fincaDelAnimal = await _context.Animales
+                            .Where(a => a.Id == rsDto.AnimalId)
+                            .Select(a => (Guid?)a.FincaId)
+                            .FirstOrDefaultAsync();
                         _context.AuditoriaLogs.Add(new AuditoriaSync {
                             UsuarioAppId = request.UsuarioId,
-                            FincaId = request.FincasNuevas.FirstOrDefault()?.Id,
+                            FincaId = fincaDelAnimal,
                             TipoEntidad = "RegistroSalud",
                             Accion = "Insert"
                         });

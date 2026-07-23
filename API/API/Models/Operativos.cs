@@ -12,12 +12,20 @@ namespace API.Models
 
     // BLOQUE B: Datos Operativos (Generados en el Móvil)
 
+    public enum RolUsuario
+    {
+        Ganadero = 1,
+        Supervisor = 2,
+        Administrador = 3
+    }
+
     public class UsuarioApp : IAuditableEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public required string Telefono { get; set; }
         public required string Nombre { get; set; }
         public required string ClaveHash { get; set; }
+        public RolUsuario Rol { get; set; } = RolUsuario.Ganadero;
         
         public Guid MunicipioId { get; set; }
         public required string Comarca { get; set; }
@@ -80,7 +88,7 @@ namespace API.Models
         EnTratamiento = 3
     }
 
-    public class ProduccionLeche
+    public class ProduccionLeche : IAuditableEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid AnimalId { get; set; }

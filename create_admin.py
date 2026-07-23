@@ -25,7 +25,8 @@ def create_admin(telefono="88888888", nombre="Administrador Principal", clave="A
         "nombre": nombre,
         "clave": clave,
         "municipioId": municipio_id,
-        "comarca": comarca
+        "comarca": comarca,
+        "rol": 3
     }
     
     req_body = json.dumps(payload).encode('utf-8')

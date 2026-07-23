@@ -3,13 +3,19 @@ import os
 
 os.chdir(r"c:\PROYECTOS\PROYECTO TESIS\Ganadero")
 
-print("[1/3] Agregando configuraciones de API de producción...")
+print("[1/3] Agregando correcciones de auditoria de BD...")
 res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print("STDOUT:", res1.stdout)
 print("STDERR:", res1.stderr)
 
 print("[2/3] Creando commit...")
-res2 = subprocess.run(["git", "commit", "-m", "fix(config): vincular https://tesis-api-t5zw.onrender.com en mobile y web frontend"], capture_output=True, text=True)
+res2 = subprocess.run(["git", "commit", "-m",
+    "fix(audit): aplicar 5 correcciones de auditoria BD: "
+    "agregar migracion col rol a usuarios_app, "
+    "ProduccionLeche implementa IAuditableEntity, "
+    "corregir FincaId en AuditoriaSync de RegistroSalud, "
+    "asegurar MigrationController con [Authorize], "
+    "corregir animales.estado=0 a 1 en migracion"], capture_output=True, text=True)
 print("STDOUT:", res2.stdout)
 print("STDERR:", res2.stderr)
 
@@ -21,7 +27,6 @@ print("STDERR:", res3.stderr)
 if res3.returncode == 0:
     print("[SUCCESS] Cambios subidos exitosamente a GitHub!")
 else:
-    print("[INFO] Probando push a master...")
     res4 = subprocess.run(["git", "push", "origin", "master"], capture_output=True, text=True)
     print("STDOUT:", res4.stdout)
     print("STDERR:", res4.stderr)

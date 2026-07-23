@@ -33,6 +33,7 @@ namespace API.Controllers
             public required string Clave { get; set; }
             public Guid MunicipioId { get; set; }
             public required string Comarca { get; set; }
+            public RolUsuario Rol { get; set; } = RolUsuario.Ganadero;
         }
 
         public class LoginRequest
@@ -68,6 +69,7 @@ namespace API.Controllers
                 Nombre = req.Nombre,
                 Telefono = req.Telefono,
                 ClaveHash = BCrypt.Net.BCrypt.HashPassword(req.Clave),
+                Rol = req.Rol,
                 MunicipioId = req.MunicipioId,
                 Comarca = req.Comarca
             };
@@ -75,7 +77,7 @@ namespace API.Controllers
             _context.UsuariosApp.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Registro exitoso", usuarioId = user.Id });
+            return Ok(new { message = "Registro exitoso", usuarioId = user.Id, rol = user.Rol.ToString() });
         }
 
         [HttpPost("login")]
@@ -98,7 +100,8 @@ namespace API.Controllers
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.Nombre),
-                    new Claim(ClaimTypes.MobilePhone, user.Telefono)
+                    new Claim(ClaimTypes.MobilePhone, user.Telefono),
+                    new Claim(ClaimTypes.Role, user.Rol.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddDays(30),
                 Issuer = _config["Jwt:Issuer"],
@@ -113,7 +116,8 @@ namespace API.Controllers
             {
                 token = jwt,
                 usuarioId = user.Id,
-                nombre = user.Nombre
+                nombre = user.Nombre,
+                rol = user.Rol.ToString()
             });
         }
     }
