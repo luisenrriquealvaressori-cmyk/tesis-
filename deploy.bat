@@ -22,10 +22,16 @@ git add .
 echo [INFO] Creando commit...
 git commit -m "fix(mobile): corregir enum SexoAnimal, centralizar ApiConfig y alinear sincronizacion" 2>nul
 
-echo [INFO] Subiendo cambios a GitHub (https://github.com/luisenrriquealvaressori-cmyk/tesis-.git)...
+echo [INFO] Subiendo cambios a GitHub...
 git push -u origin main
 
 echo ===========================================
 echo   Publicacion en GitHub completada!
 echo ===========================================
+echo.
+echo ===========================================
+echo   Disparando Despliegue en Render API...
+echo ===========================================
+python render_deploy.py
+
 pause
