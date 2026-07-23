@@ -3,13 +3,13 @@ import os
 
 os.chdir(r"c:\PROYECTOS\PROYECTO TESIS\Ganadero")
 
-print("[1/3] Agregando API.csproj...")
+print("[1/3] Agregando Program.cs...")
 res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print("STDOUT:", res1.stdout)
 print("STDERR:", res1.stderr)
 
 print("[2/3] Creando commit...")
-res2 = subprocess.run(["git", "commit", "-m", "fix(api): cambiar Microsoft.AspNetCore.OpenApi a version 9.0.2 para compilar limpiamente en .NET 9 SDK"], capture_output=True, text=True)
+res2 = subprocess.run(["git", "commit", "-m", "fix(api): ignorar PendingModelChangesWarning en DbContext y envolver Migrate() en try-catch"], capture_output=True, text=True)
 print("STDOUT:", res2.stdout)
 print("STDERR:", res2.stderr)
 
