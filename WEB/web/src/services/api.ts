@@ -1,6 +1,4 @@
-// src/services/api.ts
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5151/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://tesis-api-t5zw.onrender.com/api';
 
 // Helper para adjuntar el token automáticamente a todas las peticiones
 const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {

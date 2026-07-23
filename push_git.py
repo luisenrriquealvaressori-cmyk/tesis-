@@ -3,13 +3,13 @@ import os
 
 os.chdir(r"c:\PROYECTOS\PROYECTO TESIS\Ganadero")
 
-print("[1/3] Agregando Program.cs...")
+print("[1/3] Agregando configuraciones de API de producción...")
 res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print("STDOUT:", res1.stdout)
 print("STDERR:", res1.stderr)
 
 print("[2/3] Creando commit...")
-res2 = subprocess.run(["git", "commit", "-m", "fix(api): ignorar PendingModelChangesWarning en DbContext y envolver Migrate() en try-catch"], capture_output=True, text=True)
+res2 = subprocess.run(["git", "commit", "-m", "fix(config): vincular https://tesis-api-t5zw.onrender.com en mobile y web frontend"], capture_output=True, text=True)
 print("STDOUT:", res2.stdout)
 print("STDERR:", res2.stderr)
 
