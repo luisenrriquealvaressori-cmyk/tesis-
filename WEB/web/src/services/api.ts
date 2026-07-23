@@ -36,15 +36,37 @@ const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
     return response.json();
 };
 
-export const loginApi = async (telefono: string, clave: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+export const loginApi = async (email: string, clave: string) => {
+    const response = await fetch(`${API_BASE_URL}/web-auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono, clave })
+        body: JSON.stringify({ email, clave })
     });
     
     if (!response.ok) {
         let errorMessage = 'Credenciales incorrectas';
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+        } catch (e) {}
+        throw new Error(errorMessage);
+    }
+    return response.json();
+};
+
+export const registerWebUserApi = async (email: string, nombre: string, clave: string, rol?: string, cargo?: string) => {
+    const token = localStorage.getItem('agro_token');
+    const response = await fetch(`${API_BASE_URL}/web-auth/register`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ email, nombre, clave, rol, cargo })
+    });
+    
+    if (!response.ok) {
+        let errorMessage = 'Error al registrar usuario';
         try {
             const errorData = await response.json();
             errorMessage = errorData.error || errorMessage;

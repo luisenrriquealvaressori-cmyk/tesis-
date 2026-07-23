@@ -553,6 +553,58 @@ namespace API.Migrations
                     b.ToTable("tratamientos", (string)null);
                 });
 
+            modelBuilder.Entity("API.Models.UsuarioWeb", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ClaveHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("clave_hash");
+
+                    b.Property<string>("Cargo")
+                        .HasColumnType("text")
+                        .HasColumnName("cargo");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nombre");
+
+                    b.Property<int>("Rol")
+                        .HasColumnType("integer")
+                        .HasColumnName("rol");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_usuarios_web");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_usuarios_web_email");
+
+                    b.ToTable("usuarios_web", (string)null);
+                });
+
             modelBuilder.Entity("API.Models.UsuarioApp", b =>
                 {
                     b.Property<Guid>("Id")

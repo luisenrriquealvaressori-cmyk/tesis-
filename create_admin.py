@@ -1,60 +1,65 @@
-import urllib.request
-import json
-import sys
+"""
+create_admin.py — Registrar el primer Administrador en la plataforma Web de AgroStats.
 
-API_URL = "https://tesis-api-t5zw.onrender.com"
+Usa el endpoint POST /api/web-auth/register.
+Si la tabla usuarios_web está vacía, el primer registro siempre se crea como Administrador.
+"""
 
-def create_admin(telefono="88888888", nombre="Administrador Principal", clave="Admin123*", comarca="Central"):
-    # 1. Obtener municipios para tomar un MunicipioId valido
-    print(f"[1/2] Obteniendo municipios de {API_URL}...")
-    municipio_id = "00000000-0000-0000-0000-000000000000"
-    try:
-        req = urllib.request.Request(f"{API_URL}/api/auth/municipios")
-        with urllib.request.urlopen(req) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            if data and len(data) > 0 and len(data[0].get("municipios", [])) > 0:
-                municipio_id = data[0]["municipios"][0]["id"]
-                print(f"[OK] Municipio seleccionado: {data[0]['municipios'][0]['nombre']} ({municipio_id})")
-    except Exception as e:
-        print(f"[AVISO] No se pudieron obtener municipios ({e}), se usara ID por defecto.")
+import requests
+import getpass
 
-    # 2. Registrar usuario Admin
-    print(f"[2/2] Registrando usuario Admin con telefono: {telefono}...")
+API_URL = "https://tesis-api-t5zw.onrender.com/api"
+
+def crear_admin():
+    print("=" * 50)
+    print("  Crear Primer Administrador — AgroStats Web")
+    print("=" * 50)
+    print()
+
+    email = input("Correo electrónico del administrador: ").strip()
+    nombre = input("Nombre completo: ").strip()
+    clave = getpass.getpass("Contraseña (no se mostrará): ")
+    clave2 = getpass.getpass("Confirmar contraseña: ")
+
+    if clave != clave2:
+        print("[ERROR] Las contraseñas no coinciden.")
+        return
+
+    cargo = input("Cargo (opcional, ej: 'Director'): ").strip() or None
+
     payload = {
-        "telefono": telefono,
+        "email": email,
         "nombre": nombre,
         "clave": clave,
-        "municipioId": municipio_id,
-        "comarca": comarca,
-        "rol": 3
+        "rol": "Administrador",
+        "cargo": cargo
     }
-    
-    req_body = json.dumps(payload).encode('utf-8')
-    req = urllib.request.Request(
-        f"{API_URL}/api/auth/register",
-        data=req_body,
-        headers={"Content-Type": "application/json"}
-    )
-    
+
     try:
-        with urllib.request.urlopen(req) as resp:
-            res_data = json.loads(resp.read().decode('utf-8'))
-            print("\n================================================")
-            print("  ¡USUARIO ADMINISTRADOR CREADO EXITOSAMENTE!")
-            print("================================================")
-            print(f" Teléfono: {telefono}")
-            print(f" Clave:    {clave}")
-            print(f" Nombre:   {nombre}")
-            print(f" ID:       {res_data.get('usuarioId', 'N/A')}")
-            print("================================================\n")
-    except urllib.error.HTTPError as e:
-        err_msg = e.read().decode('utf-8')
-        print(f"[ERROR HTTP {e.code}]: {err_msg}")
+        print(f"\nConectando a {API_URL}/web-auth/register ...")
+        resp = requests.post(f"{API_URL}/web-auth/register", json=payload, timeout=30)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            print()
+            print("[SUCCESS] ¡Administrador creado exitosamente!")
+            print(f"  ID      : {data.get('usuarioId')}")
+            print(f"  Email   : {data.get('email')}")
+            print(f"  Nombre  : {data.get('nombre')}")
+            print(f"  Rol     : {data.get('rol')}")
+            print()
+            print("Puedes iniciar sesión en la plataforma web con estas credenciales.")
+        elif resp.status_code == 409:
+            print(f"[ERROR] Ya existe un usuario con ese correo: {resp.json().get('error')}")
+        elif resp.status_code == 401:
+            print("[ERROR] La tabla ya tiene usuarios. Debes autenticarte primero para agregar más.")
+        else:
+            print(f"[ERROR] Código {resp.status_code}: {resp.text}")
+
+    except requests.exceptions.ConnectionError:
+        print(f"[ERROR] No se pudo conectar a {API_URL}. ¿Está corriendo la API en Render?")
     except Exception as e:
-        print(f"[ERROR]: {e}")
+        print(f"[ERROR] {e}")
 
 if __name__ == "__main__":
-    telefono = sys.argv[1] if len(sys.argv) > 1 else "88888888"
-    clave = sys.argv[2] if len(sys.argv) > 2 else "Admin123*"
-    nombre = sys.argv[3] if len(sys.argv) > 3 else "Administrador Principal"
-    create_admin(telefono, nombre, clave)
+    crear_admin()

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { loginApi } from '../services/api';
 
 const Login = () => {
-  const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
   const [clave, setClave] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const data = await loginApi(telefono, clave);
+      const data = await loginApi(email, clave);
       login(data.token, data.usuarioId, data.nombre, data.rol);
       navigate('/');
     } catch (err: any) {
@@ -43,7 +43,7 @@ const Login = () => {
             <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>landscape</span>
           </div>
           <h1 className="text-headline-lg font-bold text-primary">AgroStats</h1>
-          <p className="text-body-lg text-on-surface-variant mt-2">Bienvenido de vuelta, Administrador</p>
+          <p className="text-body-lg text-on-surface-variant mt-2">Portal de Supervisión</p>
         </div>
 
         {error && (
@@ -55,21 +55,22 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-label-lg font-medium text-on-surface mb-2" htmlFor="telefono">
-              Teléfono
+            <label className="block text-label-lg font-medium text-on-surface mb-2" htmlFor="email">
+              Correo electrónico
             </label>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-on-surface-variant">
-                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>phone</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>mail</span>
               </span>
               <input
-                id="telefono"
-                type="tel"
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow text-on-surface"
-                placeholder="Ej. 8888-8888"
+                placeholder="admin@ganadero.com"
                 required
+                autoComplete="email"
               />
             </div>
           </div>
@@ -90,6 +91,7 @@ const Login = () => {
                 className="w-full pl-10 pr-4 py-3 bg-surface border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-shadow text-on-surface"
                 placeholder="••••••••"
                 required
+                autoComplete="current-password"
               />
             </div>
           </div>
@@ -105,7 +107,7 @@ const Login = () => {
                 Iniciando sesión...
               </span>
             ) : (
-              'Ingresar'
+              'Ingresar al Portal'
             )}
           </button>
         </form>

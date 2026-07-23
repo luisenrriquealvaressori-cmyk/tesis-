@@ -5,6 +5,25 @@ namespace API.Models
 {
     // BLOQUE A: Catálogos Maestros (Administrados en la Web)
 
+    /// <summary>
+    /// Usuarios de la plataforma WEB (Supervisores y Administradores).
+    /// Tabla separada de UsuarioApp (ganaderos de la APK).
+    /// Login con Email + Clave.
+    /// </summary>
+    public class UsuarioWeb : IAuditableEntity
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public required string Email { get; set; }
+        public required string Nombre { get; set; }
+        public required string ClaveHash { get; set; }
+        public RolUsuario Rol { get; set; } = RolUsuario.Supervisor;
+        public string? Cargo { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public bool IsDeleted { get; set; }
+    }
+
     public class Departamento
     {
         public Guid Id { get; set; } = Guid.NewGuid();

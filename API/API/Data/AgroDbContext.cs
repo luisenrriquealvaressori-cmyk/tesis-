@@ -22,6 +22,9 @@ namespace API.Data
         public DbSet<EnfermedadSintoma> EnfermedadSintomas { get; set; }
         public DbSet<EnfermedadMedicamento> EnfermedadMedicamentos { get; set; }
 
+        // BLOQUE A: Usuarios Web (Supervisores/Admins)
+        public DbSet<UsuarioWeb> UsuariosWeb { get; set; }
+
         // BLOQUE B
         public DbSet<UsuarioApp> UsuariosApp { get; set; }
         public DbSet<Finca> Fincas { get; set; }
@@ -129,6 +132,11 @@ namespace API.Data
                 .HasIndex(u => u.Telefono)
                 .IsUnique();
 
+            // Email de usuarios web debe ser único
+            modelBuilder.Entity<UsuarioWeb>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
             modelBuilder.Entity<RegistroSalud>()
                 .HasIndex(rs => new { rs.FechaDeteccion, rs.AnimalId });
 
@@ -138,6 +146,7 @@ namespace API.Data
             // ----------------------------------------------------------------
             // SOFT DELETE: Filtros globales para excluir registros eliminados
             // ----------------------------------------------------------------
+            modelBuilder.Entity<UsuarioWeb>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<UsuarioApp>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<Finca>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<Animal>().HasQueryFilter(e => !e.IsDeleted);
