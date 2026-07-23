@@ -1,4 +1,6 @@
 import urllib.request
+import urllib.error
+import ssl
 import json
 import sys
 
@@ -6,17 +8,25 @@ RENDER_API_KEY = "rnd_BjBpENDlR1P2YxqR9pcf6O4YwdQS"
 HEADERS = {
     "Authorization": f"Bearer {RENDER_API_KEY}",
     "Accept": "application/json",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+
 def list_services():
-    url = "https://api.render.com/v1/services?limit=20"
+    url = "https://api.render.com/v1/services?limit=50"
     req = urllib.request.Request(url, headers=HEADERS)
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, context=ctx) as response:
             res_body = response.read().decode('utf-8')
             data = json.loads(res_body)
             return data
+    except urllib.error.HTTPError as e:
+        print(f"[ERROR HTTP {e.code}] {e.reason}: {e.read().decode('utf-8')}")
+        return []
     except Exception as e:
         print(f"[ERROR] No se pudieron obtener los servicios de Render: {e}")
         return []
@@ -25,7 +35,7 @@ def trigger_deploy(service_id, service_name):
     url = f"https://api.render.com/v1/services/{service_id}/deploys"
     req = urllib.request.Request(url, data=b"{}", headers=HEADERS, method="POST")
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, context=ctx) as response:
             res_body = response.read().decode('utf-8')
             data = json.loads(res_body)
             print(f"[SUCCESS] Despliegue iniciado exitosamente para '{service_name}' (ID: {service_id})")
