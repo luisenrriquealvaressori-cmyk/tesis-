@@ -4,15 +4,68 @@ using API.Models;
 
 namespace API.DTOs
 {
+    public class DepartamentoCatalogDto
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+    }
+
+    public class MunicipioCatalogDto
+    {
+        public Guid Id { get; set; }
+        public Guid DepartamentoId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+    }
+
+    public class ComarcaCatalogDto
+    {
+        public Guid Id { get; set; }
+        public Guid MunicipioId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+    }
+
+    public class RazaCatalogDto
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string OrigenGenetico { get; set; } = string.Empty;
+        public int Proposito { get; set; }
+        public string? Descripcion { get; set; }
+    }
+
+    public class EnfermedadCatalogDto
+    {
+        public Guid Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public bool NotificacionObligatoria { get; set; }
+    }
+
+    public class SintomaCatalogDto
+    {
+        public Guid Id { get; set; }
+        public Guid? EnfermedadId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+    }
+
+    public class MedicamentoCatalogDto
+    {
+        public Guid Id { get; set; }
+        public string NombreComercial { get; set; } = string.Empty;
+        public string? PrincipioActivo { get; set; }
+        public string? ViaAdministracion { get; set; }
+        public int DiasRetiroLeche { get; set; }
+    }
+
     public class SyncPullResponse
     {
-        public IEnumerable<Departamento> Departamentos { get; set; } = new List<Departamento>();
-        public IEnumerable<Municipio>    Municipios    { get; set; } = new List<Municipio>();
-        public IEnumerable<Comarca>      Comarcas      { get; set; } = new List<Comarca>();
-        public IEnumerable<Raza>         Razas         { get; set; } = new List<Raza>();
-        public IEnumerable<Enfermedad>   Enfermedades  { get; set; } = new List<Enfermedad>();
-        public IEnumerable<Sintoma>      Sintomas      { get; set; } = new List<Sintoma>();
-        public IEnumerable<Medicamento>  Medicamentos  { get; set; } = new List<Medicamento>();
+        public IEnumerable<DepartamentoCatalogDto> Departamentos { get; set; } = new List<DepartamentoCatalogDto>();
+        public IEnumerable<MunicipioCatalogDto>    Municipios    { get; set; } = new List<MunicipioCatalogDto>();
+        public IEnumerable<ComarcaCatalogDto>      Comarcas      { get; set; } = new List<ComarcaCatalogDto>();
+        public IEnumerable<RazaCatalogDto>         Razas         { get; set; } = new List<RazaCatalogDto>();
+        public IEnumerable<EnfermedadCatalogDto>   Enfermedades  { get; set; } = new List<EnfermedadCatalogDto>();
+        public IEnumerable<SintomaCatalogDto>      Sintomas      { get; set; } = new List<SintomaCatalogDto>();
+        public IEnumerable<MedicamentoCatalogDto>  Medicamentos  { get; set; } = new List<MedicamentoCatalogDto>();
     }
 
     public class SyncPushRequest

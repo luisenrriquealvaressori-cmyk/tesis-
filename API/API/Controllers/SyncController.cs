@@ -33,13 +33,27 @@ namespace API.Controllers
         {
             var response = new SyncPullResponse
             {
-                Departamentos = await _context.Departamentos.AsNoTracking().ToListAsync(),
-                Municipios    = await _context.Municipios.AsNoTracking().ToListAsync(),
-                Comarcas      = await _context.Comarcas.AsNoTracking().ToListAsync(),
-                Razas         = await _context.Razas.AsNoTracking().ToListAsync(),
-                Enfermedades  = await _context.Enfermedades.AsNoTracking().ToListAsync(),
-                Sintomas      = await _context.Sintomas.AsNoTracking().ToListAsync(),
-                Medicamentos  = await _context.Medicamentos.AsNoTracking().ToListAsync()
+                Departamentos = await _context.Departamentos.AsNoTracking()
+                    .Select(d => new DepartamentoCatalogDto { Id = d.Id, Nombre = d.Nombre })
+                    .ToListAsync(),
+                Municipios = await _context.Municipios.AsNoTracking()
+                    .Select(m => new MunicipioCatalogDto { Id = m.Id, DepartamentoId = m.DepartamentoId, Nombre = m.Nombre })
+                    .ToListAsync(),
+                Comarcas = await _context.Comarcas.AsNoTracking()
+                    .Select(c => new ComarcaCatalogDto { Id = c.Id, MunicipioId = c.MunicipioId, Nombre = c.Nombre })
+                    .ToListAsync(),
+                Razas = await _context.Razas.AsNoTracking()
+                    .Select(r => new RazaCatalogDto { Id = r.Id, Nombre = r.Nombre, OrigenGenetico = r.OrigenGenetico, Proposito = (int)r.Proposito, Descripcion = r.Descripcion })
+                    .ToListAsync(),
+                Enfermedades = await _context.Enfermedades.AsNoTracking()
+                    .Select(e => new EnfermedadCatalogDto { Id = e.Id, Nombre = e.Nombre, Descripcion = e.Descripcion, NotificacionObligatoria = e.NotificacionObligatoria })
+                    .ToListAsync(),
+                Sintomas = await _context.Sintomas.AsNoTracking()
+                    .Select(s => new SintomaCatalogDto { Id = s.Id, Nombre = s.Nombre })
+                    .ToListAsync(),
+                Medicamentos = await _context.Medicamentos.AsNoTracking()
+                    .Select(m => new MedicamentoCatalogDto { Id = m.Id, NombreComercial = m.NombreComercial, PrincipioActivo = m.PrincipioActivo, ViaAdministracion = m.ViaAdministracion, DiasRetiroLeche = m.DiasRetiroLeche })
+                    .ToListAsync()
             };
 
             return Ok(response);

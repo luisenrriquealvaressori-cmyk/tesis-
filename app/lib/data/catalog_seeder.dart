@@ -38,71 +38,83 @@ class CatalogSyncService {
           .timeout(const Duration(seconds: 35));
 
       if (response.statusCode != 200) {
+        debugPrint('[CatalogSync] HTTP Error ${response.statusCode}: ${response.body}');
         return false;
       }
 
       final Map<String, dynamic> data = jsonDecode(response.body);
 
       // --- Mapear la respuesta del servidor a los mapas que espera SQLite ---
-      // El servidor devuelve camelCase (System.Text.Json por defecto)
-
-      final List<Map<String, dynamic>> departamentos = (data['departamentos'] as List)
+      final List<Map<String, dynamic>> departamentos = ((data['departamentos'] ?? data['Departamentos']) as List? ?? [])
           .map((d) => {
-                'id': d['id'] as String,
-                'nombre': d['nombre'] as String,
+                'id': (d['id'] ?? d['Id'])?.toString() ?? '',
+                'nombre': (d['nombre'] ?? d['Nombre'])?.toString() ?? '',
               })
+          .where((d) => (d['id'] as String).isNotEmpty)
           .toList();
 
-      final List<Map<String, dynamic>> municipios = (data['municipios'] as List)
+      final List<Map<String, dynamic>> municipios = ((data['municipios'] ?? data['Municipios']) as List? ?? [])
           .map((m) => {
-                'id': m['id'] as String,
-                'departamento_id': m['departamentoId'] as String,
-                'nombre': m['nombre'] as String,
+                'id': (m['id'] ?? m['Id'])?.toString() ?? '',
+                'departamento_id': (m['departamentoId'] ?? m['departamento_id'] ?? m['DepartamentoId'])?.toString() ?? '',
+                'nombre': (m['nombre'] ?? m['Nombre'])?.toString() ?? '',
               })
+          .where((m) => (m['id'] as String).isNotEmpty)
           .toList();
 
-      final List<Map<String, dynamic>> comarcas = (data['comarcas'] as List)
+      final List<Map<String, dynamic>> comarcas = ((data['comarcas'] ?? data['Comarcas']) as List? ?? [])
           .map((c) => {
-                'id': c['id'] as String,
-                'municipio_id': c['municipioId'] as String,
-                'nombre': c['nombre'] as String,
+                'id': (c['id'] ?? c['Id'])?.toString() ?? '',
+                'municipio_id': (c['municipioId'] ?? c['municipio_id'] ?? c['MunicipioId'])?.toString() ?? '',
+                'nombre': (c['nombre'] ?? c['Nombre'])?.toString() ?? '',
               })
+          .where((c) => (c['id'] as String).isNotEmpty)
           .toList();
 
-      final List<Map<String, dynamic>> razas = (data['razas'] as List)
+      final List<Map<String, dynamic>> razas = ((data['razas'] ?? data['Razas']) as List? ?? [])
           .map((r) => {
-                'id': r['id'] as String,
-                'nombre': r['nombre'] as String,
-                'proposito': r['proposito'] as int,
+                'id': (r['id'] ?? r['Id'])?.toString() ?? '',
+                'nombre': (r['nombre'] ?? r['Nombre'])?.toString() ?? '',
+                'proposito': (r['proposito'] ?? r['Proposito']) is int
+                    ? (r['proposito'] ?? r['Proposito'])
+                    : int.tryParse((r['proposito'] ?? r['Proposito'])?.toString() ?? '0') ?? 0,
               })
+          .where((r) => (r['id'] as String).isNotEmpty)
           .toList();
 
-      final List<Map<String, dynamic>> enfermedades = (data['enfermedades'] as List)
+      final List<Map<String, dynamic>> enfermedades = ((data['enfermedades'] ?? data['Enfermedades']) as List? ?? [])
           .map((e) => {
-                'id': e['id'] as String,
-                'nombre': e['nombre'] as String,
-                'descripcion': e['descripcion'] as String,
-                'notificacion_obligatoria': (e['notificacionObligatoria'] as bool) ? 1 : 0,
+                'id': (e['id'] ?? e['Id'])?.toString() ?? '',
+                'nombre': (e['nombre'] ?? e['Nombre'])?.toString() ?? '',
+                'descripcion': (e['descripcion'] ?? e['Descripcion'])?.toString() ?? '',
+                'notificacion_obligatoria': (e['notificacionObligatoria'] ?? e['notificacion_obligatoria'] ?? e['NotificacionObligatoria']) == true ? 1 : 0,
               })
+          .where((e) => (e['id'] as String).isNotEmpty)
           .toList();
 
-      final List<Map<String, dynamic>> sintomas = (data['sintomas'] as List)
+      final List<Map<String, dynamic>> sintomas = ((data['sintomas'] ?? data['Sintomas']) as List? ?? [])
           .map((s) => {
-                'id': s['id'] as String,
-                'enfermedad_id': s['enfermedadId'] as String,
-                'nombre': s['nombre'] as String,
+                'id': (s['id'] ?? s['Id'])?.toString() ?? '',
+                'enfermedad_id': (s['enfermedadId'] ?? s['enfermedad_id'] ?? s['EnfermedadId'])?.toString() ?? '',
+                'nombre': (s['nombre'] ?? s['Nombre'])?.toString() ?? '',
               })
+          .where((s) => (s['id'] as String).isNotEmpty)
           .toList();
 
-      final List<Map<String, dynamic>> medicamentos = (data['medicamentos'] as List)
+      final List<Map<String, dynamic>> medicamentos = ((data['medicamentos'] ?? data['Medicamentos']) as List? ?? [])
           .map((m) => {
-                'id': m['id'] as String,
-                'nombre_comercial': m['nombreComercial'] as String,
-                'principio_activo': m['principioActivo'] as String,
-                'via_administracion': m['viaAdministracion'] as String,
-                'dias_retiro_leche': m['diasRetiroLeche'] as int,
+                'id': (m['id'] ?? m['Id'])?.toString() ?? '',
+                'nombre_comercial': (m['nombreComercial'] ?? m['nombre_comercial'] ?? m['NombreComercial'])?.toString() ?? '',
+                'principio_activo': (m['principioActivo'] ?? m['principio_activo'] ?? m['PrincipioActivo'])?.toString() ?? '',
+                'via_administracion': (m['viaAdministracion'] ?? m['via_administracion'] ?? m['ViaAdministracion'])?.toString() ?? '',
+                'dias_retiro_leche': (m['diasRetiroLeche'] ?? m['dias_retiro_leche'] ?? m['DiasRetiroLeche']) is int
+                    ? (m['diasRetiroLeche'] ?? m['dias_retiro_leche'] ?? m['DiasRetiroLeche'])
+                    : int.tryParse((m['diasRetiroLeche'] ?? m['dias_retiro_leche'] ?? m['DiasRetiroLeche'])?.toString() ?? '0') ?? 0,
               })
+          .where((m) => (m['id'] as String).isNotEmpty)
           .toList();
+
+      debugPrint('[CatalogSync] Éxito: Descargados ${departamentos.length} deptos, ${municipios.length} munis, ${comarcas.length} comarcas');
 
       // --- Guardar todo en SQLite limpiando catálogos previos ---
       await LocalDatabase.instance.upsertCatalogoBatch(
@@ -117,9 +129,8 @@ class CatalogSyncService {
       );
 
       return true;
-    } catch (e) {
-      // Error de red, timeout, o JSON inválido → los catálogos locales
-      // existentes siguen siendo válidos para uso offline.
+    } catch (e, stack) {
+      debugPrint('[CatalogSync] Error al procesar catálogos: $e\n$stack');
       return false;
     }
   }

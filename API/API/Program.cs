@@ -48,7 +48,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Aplicar migraciones automáticamente al iniciar la aplicación para crear las tablas en la base de datos (Neon)
+// Aplicar migraciones automáticamente al iniciar la aplicación (Neon DB)
 using (var scope = app.Services.CreateScope())
 {
     try
