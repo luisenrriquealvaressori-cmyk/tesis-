@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import '../data/local_database.dart';
 import '../providers/auth_provider.dart';
+import '../utils/id_generator.dart';
 import '../widgets/custom_app_bar.dart';
+import '../widgets/notification_service.dart';
 
 class FarmSetupScreen extends StatefulWidget {
   const FarmSetupScreen({super.key});
@@ -23,8 +24,6 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
   final _passwordController = TextEditingController();
   final _farmNameController = TextEditingController(); // OPCIONAL
   final _comarcaController = TextEditingController();
-  
-  final _uuid = const Uuid();
 
   // Catálogos cargados desde SQLite
   List<Map<String, dynamic>> _departamentos = [];
@@ -59,11 +58,18 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
 
   Future<void> _loadCatalogs() async {
     setState(() => _isLoadingCatalogs = true);
+    final authProvider = context.read<AuthProvider>();
+    final authNombre = authProvider.nombre;
+    final token = authProvider.token;
+
+    // Conectarse al servidor para descargar los catálogos maestros actualizados
+    await CatalogSyncService.downloadAndCache(token);
+    await CatalogSyncService.ensureBaseCatalogs();
+
     final deptos = await LocalDatabase.instance.getAll('departamentos');
     
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.nombre != null && authProvider.nombre!.isNotEmpty) {
-      _fullNameController.text = authProvider.nombre!;
+    if (authNombre != null && authNombre.isNotEmpty) {
+      _fullNameController.text = authNombre;
     }
     
     setState(() {
@@ -135,8 +141,9 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
   Future<void> _saveOnboardingAndFarm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedMunicipio == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona un municipio'), backgroundColor: Colors.red),
+      AppNotificationService.warning(context,
+        'Municipio requerido',
+        subtitle: 'Selecciona el municipio de tu finca para continuar',
       );
       return;
     }
@@ -152,9 +159,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
         final registered = await authProvider.register(
           nombre: _fullNameController.text.trim(),
           telefono: _phoneController.text.trim(),
-          clave: _passwordController.text.trim().isNotEmpty 
-              ? _passwordController.text.trim() 
-              : '123456',
+          clave: _passwordController.text.trim(),
           municipioId: municipioId,
           comarca: comarcaText,
         );
@@ -174,7 +179,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
         farmName = nameOwner.isNotEmpty ? 'Finca de $nameOwner' : 'Finca Principal';
       }
 
-      final fincaId = _uuid.v4();
+      final fincaId = IdGenerator.forFinca(authProvider.usuarioId!, farmName);
 
       // 3. Insertar Finca en SQLite local
       await LocalDatabase.instance.insertFinca({
@@ -190,19 +195,17 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Registro completado y finca creada exitosamente'),
-            backgroundColor: Colors.green,
-          ),
+        AppNotificationService.success(context,
+          'Finca registrada exitosamente',
+          subtitle: '$farmName está lista para operar',
         );
-        // Ir a la página principal / Dashboard
         context.go('/dashboard');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e'), backgroundColor: Colors.red),
+        AppNotificationService.error(context,
+          'Error al guardar',
+          subtitle: e.toString().length > 60 ? '${e.toString().substring(0, 60)}...' : e.toString(),
         );
       }
     } finally {
@@ -265,8 +268,14 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                               hintText: 'Ej: 88889999',
                               prefixIcon: Icon(Icons.phone),
                             ),
-                            validator: (v) =>
-                                (v == null || v.trim().isEmpty) ? 'Ingresa tu teléfono' : null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Ingresa tu teléfono';
+                              final clean = v.trim().replaceAll(RegExp(r'[\s\-]'), '');
+                              if (clean.length < 8 || !RegExp(r'^\d+$').hasMatch(clean)) {
+                                return 'Ingresa un número telefónico válido (mínimo 8 dígitos)';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
 
@@ -280,8 +289,11 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                                 hintText: 'Crea una contraseña segura',
                                 prefixIcon: Icon(Icons.lock),
                               ),
-                              validator: (v) =>
-                                  (v == null || v.trim().isEmpty) ? 'Ingresa una contraseña' : null,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) return 'Ingresa una contraseña';
+                                if (v.trim().length < 6) return 'La contraseña debe tener al menos 6 caracteres';
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -298,16 +310,23 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           _buildLabel('Departamento *'),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<Map<String, dynamic>>(
-                            key: ValueKey(_selectedDepartamento),
+                            key: ValueKey('depto_${_selectedDepartamento?['id'] ?? 'none'}'),
+                            isExpanded: true,
                             initialValue: _selectedDepartamento,
-                            hint: const Text('Selecciona departamento'),
+                            hint: const Text(
+                              'Selecciona departamento',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.map),
                             ),
                             items: _departamentos
                                 .map((d) => DropdownMenuItem(
                                       value: d,
-                                      child: Text(d['nombre'] as String),
+                                      child: Text(
+                                        d['nombre'] as String,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ))
                                 .toList(),
                             onChanged: _onDepartamentoSelected,
@@ -319,12 +338,14 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           _buildLabel('Municipio *'),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<Map<String, dynamic>>(
-                            key: ValueKey(_selectedMunicipio),
+                            key: ValueKey('muni_${_selectedMunicipio?['id'] ?? 'none'}'),
+                            isExpanded: true,
                             initialValue: _selectedMunicipio,
                             hint: Text(
                               _selectedDepartamento == null
                                   ? 'Selecciona departamento primero'
                                   : 'Selecciona un municipio',
+                              overflow: TextOverflow.ellipsis,
                             ),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.location_city),
@@ -332,7 +353,10 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                             items: _municipios
                                 .map((m) => DropdownMenuItem(
                                       value: m,
-                                      child: Text(m['nombre'] as String),
+                                      child: Text(
+                                        m['nombre'] as String,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ))
                                 .toList(),
                             onChanged: _selectedDepartamento == null
@@ -347,16 +371,23 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           const SizedBox(height: 8),
                           if (_comarcas.isNotEmpty) ...[
                             DropdownButtonFormField<Map<String, dynamic>>(
-                              key: ValueKey(_selectedComarca),
+                              key: ValueKey('comarca_${_selectedComarca?['id'] ?? 'none'}'),
+                              isExpanded: true,
                               initialValue: _selectedComarca,
-                              hint: const Text('Selecciona una comarca'),
+                              hint: const Text(
+                                'Selecciona una comarca',
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               decoration: const InputDecoration(
                                 prefixIcon: Icon(Icons.place),
                               ),
                               items: _comarcas
                                   .map((c) => DropdownMenuItem(
                                         value: c,
-                                        child: Text(c['nombre'] as String),
+                                        child: Text(
+                                          c['nombre'] as String,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ))
                                   .toList(),
                               onChanged: (v) => setState(() => _selectedComarca = v),

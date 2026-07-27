@@ -136,6 +136,133 @@ class SyncProvider extends ChangeNotifier {
     }
   }
 
+  /// Sincronización bidireccional completa (Móvil <-> Servidor <-> Web).
+  /// 1. PUSH: Envía cambios locales pendientes (Móvil -> Servidor/Web).
+  /// 2. PULL: Descarga actualizaciones más recientes (Web/Servidor -> Móvil).
+  Future<bool> syncFullBidirectional(String usuarioId, String token) async {
+    if (!_isConnected) {
+      _lastError = 'Sin conexión a internet';
+      _currentState = SyncState.offline;
+      notifyListeners();
+      return false;
+    }
+
+    _currentState = SyncState.syncing;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      // 1. PUSH: Enviar primero cambios locales si hay pendientes
+      if (_pendingCount > 0) {
+        final pushSuccess = await syncDataNow(usuarioId, token);
+        if (!pushSuccess) {
+          _currentState = SyncState.pending;
+          notifyListeners();
+          return false;
+        }
+      }
+
+      // 2. PULL: Descargar cambios actualizados desde el servidor/web hacia SQLite
+      final pullSuccess = await pullUserData(token);
+
+      await refreshPendingCount();
+      _currentState = SyncState.synced;
+      notifyListeners();
+      return pullSuccess;
+    } catch (e) {
+      _lastError = 'Error de sincronización bidireccional: ${e.toString()}';
+      _currentState = _pendingCount > 0 ? SyncState.pending : SyncState.synced;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Descarga los datos propios del usuario desde el servidor.
+  ///
+  /// Se usa en dos escenarios:
+  /// 1. Teléfono nuevo: el SQLite está vacío pero el usuario ya tiene datos en el servidor.
+  /// 2. Reinstalación de la app: misma situación.
+  ///
+  /// Los registros descargados se insertan en SQLite con [is_synced = 1]
+  /// porque ya están sincronizados con el servidor.
+  ///
+  /// Retorna `true` si la descarga fue exitosa.
+  Future<bool> pullUserData(String token) async {
+    if (!_isConnected) return false;
+
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/api/sync/pull-user-data'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // Insertar fincas del servidor en SQLite local
+        final fincas = (data['fincas'] as List<dynamic>?) ?? [];
+        for (final f in fincas) {
+          await LocalDatabase.instance.insertFinca({
+            'id': f['id'],
+            'nombre': f['nombre'],
+            'municipio_id': f['municipioId'],
+            'comarca': f['comarca'] ?? '',
+            'latitud': (f['latitud'] as num?)?.toDouble() ?? 0.0,
+            'longitud': (f['longitud'] as num?)?.toDouble() ?? 0.0,
+            'created_at': f['createdAt'] ?? DateTime.now().toIso8601String(),
+            'is_deleted': 0,
+            'is_synced': 1, // Ya está en el servidor
+          });
+        }
+
+        // Insertar animales del servidor en SQLite local
+        final animales = (data['animales'] as List<dynamic>?) ?? [];
+        for (final a in animales) {
+          await LocalDatabase.instance.insertAnimal({
+            'id': a['id'],
+            'finca_id': a['fincaId'],
+            'raza_id': a['razaId'],
+            'identificacion': a['identificacion'],
+            'sexo': a['sexo'],
+            'fecha_nacimiento': a['fechaNacimiento'],
+            'estado': a['estado'] ?? 1,
+            'created_at': a['createdAt'] ?? DateTime.now().toIso8601String(),
+            'is_deleted': 0,
+            'is_synced': 1, // Ya está en el servidor
+          });
+        }
+
+        // Insertar producción reciente del servidor (últimos 60 días)
+        final produccion = (data['produccion'] as List<dynamic>?) ?? [];
+        for (final p in produccion) {
+          await LocalDatabase.instance.insertProduccionLeche({
+            'id': p['id'],
+            'animal_id': p['animalId'],
+            'fecha': p['fecha'],
+            'jornada': p['jornada'],
+            'volumen_litros': (p['volumenLitros'] as num?)?.toDouble() ?? 0.0,
+            'created_at': DateTime.now().toIso8601String(),
+            'is_deleted': 0,
+            'is_synced': 1, // Ya está en el servidor
+          });
+        }
+
+        await refreshPendingCount();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _lastError = 'Error al descargar datos: ${e.toString()}';
+      return false;
+    }
+  }
+
+
   // =========================================================================
   // Mappers: SQLite row → API DTO
   // =========================================================================

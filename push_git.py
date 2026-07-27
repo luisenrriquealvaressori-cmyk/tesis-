@@ -12,8 +12,8 @@ res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print(res1.stdout, res1.stderr)
 
 commit_msg = (
-    "feat: actualización integral de onboarding, fórmulas zootécnicas KPI "
-    "(UGM, densidad láctea, retiro sanitario), plataforma WEB y API REST .NET 9"
+    "fix: permisos de red Android release, validaciones estrictas de datos, "
+    "sincronización bidireccional completa (Móvil ↔ API ↔ Web) y descarga pública de catálogos"
 )
 
 print("[3/4] Creando commit en Git...")

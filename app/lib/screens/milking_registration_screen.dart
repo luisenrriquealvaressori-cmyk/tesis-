@@ -80,6 +80,32 @@ class _MilkingRegistrationScreenState
   }
 
   Future<void> _guardarProduccion() async {
+    // Validar valores numéricos erróneos o fuera de límites biológicos reales (> 60L por ordeño)
+    for (final entry in _controllers.entries) {
+      final text = entry.value.text.trim();
+      if (text.isNotEmpty) {
+        final val = double.tryParse(text);
+        if (val == null || val < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ingresa un valor numérico válido para la producción de leche'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+        if (val > 60.0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('El valor ingresado supera el límite biológico real (máximo 60 L por ordeño)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     // Verificar que al menos un animal tenga litros > 0
     final registros = _animales.where((a) {
       final id = a['id'] as String;
@@ -90,7 +116,7 @@ class _MilkingRegistrationScreenState
     if (registros.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ingresa la producción de al menos un animal'),
+          content: Text('Ingresa la producción de al menos un animal (litros mayor a 0)'),
           backgroundColor: Colors.orange,
         ),
       );

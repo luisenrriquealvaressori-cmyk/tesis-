@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:uuid/uuid.dart';
+import 'package:provider/provider.dart';
 import '../data/local_database.dart';
+import '../providers/auth_provider.dart';
+import '../utils/id_generator.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/notification_service.dart';
 
 class AnimalRegistrationScreen extends StatefulWidget {
   const AnimalRegistrationScreen({super.key});
@@ -16,7 +19,6 @@ class AnimalRegistrationScreen extends StatefulWidget {
 class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _identificacionController = TextEditingController();
-  final _uuid = const Uuid();
 
   // Catálogos desde SQLite
   List<Map<String, dynamic>> _razas = [];
@@ -66,40 +68,62 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
   Future<void> _saveAnimal() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedRaza == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona una raza'), backgroundColor: Colors.red),
+      AppNotificationService.warning(context,
+        'Selecciona una raza',
+        subtitle: 'Elige la raza del animal antes de continuar',
       );
       return;
     }
     if (_fechaNacimiento == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona la fecha de nacimiento'), backgroundColor: Colors.red),
+      AppNotificationService.warning(context,
+        'Fecha de nacimiento requerida',
+        subtitle: 'Selecciona la fecha de nacimiento del animal',
       );
       return;
     }
 
     setState(() => _isSaving = true);
     try {
+      // Leer el usuarioId ANTES de cualquier await para evitar
+      // el uso de BuildContext a través de gaps asíncronos.
+      final usuarioId = context.read<AuthProvider>().usuarioId ?? 'local_user';
+
       // Obtener la finca del usuario
       final finca = await LocalDatabase.instance.getFinca();
       if (finca == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error: No se encontró finca configurada'),
-              backgroundColor: Colors.red,
-            ),
+          AppNotificationService.error(context,
+            'Finca no configurada',
+            subtitle: 'Ve a Configuración y registra tu finca primero',
           );
         }
         return;
       }
 
-      final animalId = _uuid.v4();
+      final tag = _identificacionController.text.trim().toUpperCase();
+      final animalesExistentes = await LocalDatabase.instance.getAnimalesByFinca(finca['id'] as String);
+      final existe = animalesExistentes.any((a) => (a['identificacion'] as String).toUpperCase() == tag);
+      if (existe) {
+        if (mounted) {
+          AppNotificationService.warning(context,
+            'Identificación duplicada',
+            subtitle: 'Ya existe un animal registrado con el arete $tag en tu finca',
+          );
+        }
+        setState(() => _isSaving = false);
+        return;
+      }
+
+      // ID determinístico: mismo usuario + misma identificación = mismo UUID
+      final animalId = IdGenerator.forAnimal(
+        usuarioId,
+        tag,
+      );
       await LocalDatabase.instance.insertAnimal({
         'id': animalId,
         'finca_id': finca['id'],
         'raza_id': _selectedRaza!['id'],
-        'identificacion': _identificacionController.text.trim().toUpperCase(),
+        'identificacion': tag,
         'sexo': _sexo,
         'fecha_nacimiento': _fechaNacimiento!.toIso8601String(),
         'created_at': DateTime.now().toIso8601String(),
@@ -108,20 +132,17 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '✅ Animal "${_identificacionController.text.trim().toUpperCase()}" guardado',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        AppNotificationService.success(context,
+          'Animal registrado exitosamente',
+          subtitle: '${_identificacionController.text.trim().toUpperCase()} guardado en tu hato',
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        AppNotificationService.error(context,
+          'Error al guardar animal',
+          subtitle: e.toString().length > 60 ? '${e.toString().substring(0, 60)}...' : e.toString(),
         );
       }
     } finally {

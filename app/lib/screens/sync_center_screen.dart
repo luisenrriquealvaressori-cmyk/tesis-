@@ -212,8 +212,7 @@ class SyncCenterScreen extends StatelessWidget {
           const Divider(height: 32),
                   ElevatedButton.icon(
             onPressed: (sync.currentState == SyncState.offline ||
-                    sync.currentState == SyncState.syncing ||
-                    sync.pendingCount == 0)
+                    sync.currentState == SyncState.syncing)
                 ? null
                 : () async {
                     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -232,12 +231,12 @@ class SyncCenterScreen extends StatelessWidget {
                       return;
                     }
 
-                    final ok = await sync.syncDataNow(userId, token);
+                    final ok = await sync.syncFullBidirectional(userId, token);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(ok
-                              ? '✅ Sincronización exitosa'
+                              ? '✅ Sincronización Bidireccional Completa (Móvil ↔ Web)'
                               : '❌ Error: ${sync.lastError}'),
                           backgroundColor: ok ? Colors.green : Colors.red,
                         ),
@@ -254,7 +253,7 @@ class SyncCenterScreen extends StatelessWidget {
                 : const Icon(Icons.sync),
             label: Text(sync.currentState == SyncState.syncing
                 ? 'Sincronizando...'
-                : 'Sincronizar Ahora'),
+                : 'Sincronización Bidireccional (Móvil ↔ Web)'),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
               backgroundColor: Colors.green[800],

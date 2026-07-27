@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../data/local_database.dart';
-import '../data/catalog_seeder.dart'; // CatalogSyncService
+import '../data/catalog_seeder.dart';
 import '../providers/auth_provider.dart';
+import '../providers/sync_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -31,7 +32,10 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runStartupSequence() async {
+    // Leer todos los Providers ANTES de los awaits para evitar
+    // el warning de BuildContext a través de gaps asíncronos.
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final syncProvider = Provider.of<SyncProvider>(context, listen: false);
 
     // Asegurar que existan catálogos base locales
     await CatalogSyncService.ensureBaseCatalogs();
@@ -52,15 +56,27 @@ class _SplashScreenState extends State<SplashScreen>
     _setStatus('Verificando configuración...');
     final finca = await LocalDatabase.instance.getFinca();
 
+    // Si hay token válido del servidor pero no hay finca local → teléfono nuevo
+    // o app reinstalada. Intentar descargar los datos propios del usuario.
+    if (finca == null &&
+        authProvider.token != null &&
+        !authProvider.token!.startsWith('local_token')) {
+      _setStatus('Descargando tus datos...');
+      await syncProvider.pullUserData(authProvider.token!);
+    }
+
+    // Revisar nuevamente si ya hay finca (pudo haber llegado del servidor)
+    final fincaFinal = await LocalDatabase.instance.getFinca();
+
     if (!mounted) return;
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
 
-    if (finca != null) {
+    if (fincaFinal != null) {
       // Usuario regresando → ir al dashboard
       context.go('/dashboard');
     } else {
-      // Primera vez → configurar la finca / completar perfil
+      // Primera vez o sin internet → configurar la finca / completar perfil
       context.go('/setup');
     }
   }

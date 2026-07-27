@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ namespace API.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
         [HttpGet("pull")]
         public async Task<ActionResult<SyncPullResponse>> Pull()
         {
@@ -43,11 +45,109 @@ namespace API.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// Descarga todos los datos operativos del usuario autenticado.
+        /// Usado cuando el usuario inicia sesión en un teléfono nuevo o reinstala la app.
+        /// El usuarioId se extrae del JWT (no del body) para garantizar aislamiento.
+        /// La producción de leche se limita a los últimos 60 días para evitar payloads enormes.
+        /// </summary>
+        [HttpGet("pull-user-data")]
+        public async Task<ActionResult<UserDataPullResponse>> PullUserData()
+        {
+            // Extraer usuarioId del JWT - garantiza que solo se devuelven datos propios
+            var usuarioIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                               ?? User.FindFirstValue("sub");
+
+            if (string.IsNullOrEmpty(usuarioIdStr) || !Guid.TryParse(usuarioIdStr, out var usuarioId))
+                return Unauthorized(new { error = "Token inválido o sin usuario identificado." });
+
+            // Fincas del usuario
+            var fincas = await _context.Fincas
+                .Where(f => f.UsuarioAppId == usuarioId && !f.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var fincaIds = fincas.Select(f => f.Id).ToList();
+
+            // Animales de sus fincas
+            var animales = await _context.Animales
+                .Where(a => fincaIds.Contains(a.FincaId) && !a.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var animalIds = animales.Select(a => a.Id).ToList();
+
+            // Producción de los últimos 60 días (evitar payloads enormes)
+            var desde = DateTime.UtcNow.AddDays(-60);
+            var produccion = await _context.ProduccionLeche
+                .Where(p => animalIds.Contains(p.AnimalId) && p.Fecha >= desde && !p.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var response = new UserDataPullResponse
+            {
+                Fincas = fincas.Select(f => new FincaPullDto
+                {
+                    Id = f.Id,
+                    Nombre = f.Nombre,
+                    MunicipioId = f.MunicipioId,
+                    Comarca = f.Comarca,
+                    Latitud = f.Latitud,
+                    Longitud = f.Longitud,
+                    CreatedAt = f.CreatedAt
+                }).ToList(),
+
+                Animales = animales.Select(a => new AnimalPullDto
+                {
+                    Id = a.Id,
+                    FincaId = a.FincaId,
+                    RazaId = a.RazaId,
+                    Identificacion = a.Identificacion,
+                    Sexo = (int)a.Sexo,
+                    FechaNacimiento = a.FechaNacimiento,
+                    Estado = (int)a.Estado,
+                    CreatedAt = a.CreatedAt
+                }).ToList(),
+
+                Produccion = produccion.Select(p => new ProduccionLechePullDto
+                {
+                    Id = p.Id,
+                    AnimalId = p.AnimalId,
+                    Fecha = p.Fecha,
+                    Jornada = (int)p.Jornada,
+                    VolumenLitros = p.VolumenLitros
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+
         [HttpPost("push")]
         public async Task<IActionResult> Push([FromBody] SyncPushRequest request)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // CRÍTICO: Usar el usuarioId del JWT, nunca del body del request.
+            // El body puede ser manipulado por un cliente malicioso;
+            // el JWT es firmado y verificado por el servidor.
+            var usuarioIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                               ?? User.FindFirstValue("sub");
 
+            if (string.IsNullOrEmpty(usuarioIdStr) || !Guid.TryParse(usuarioIdStr, out var usuarioIdJwt))
+                return Unauthorized(new { error = "Token inválido o sin usuario identificado." });
+
+            // Validar que ninguna finca del request le pertenezca a OTRO usuario.
+            // Previene que un ganadero inyecte datos en la finca de otro ganadero.
+            var fincasIds = request.FincasNuevas.Select(f => f.Id).ToList();
+            if (fincasIds.Any())
+            {
+                var fincasAjenas = await _context.Fincas
+                    .Where(f => fincasIds.Contains(f.Id) && f.UsuarioAppId != usuarioIdJwt)
+                    .AnyAsync();
+
+                if (fincasAjenas)
+                    return Conflict(new { error = "Conflicto de propiedad: uno o más IDs de finca pertenecen a otro usuario." });
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 // PRE-FETCH FINCAS
@@ -61,7 +161,7 @@ namespace API.Controllers
                         _context.Fincas.Add(new Finca
                         {
                             Id = fDto.Id,
-                            UsuarioAppId = request.UsuarioId,
+                            UsuarioAppId = usuarioIdJwt,
                             MunicipioId = fDto.MunicipioId,
                             Nombre = fDto.Nombre,
                             Comarca = fDto.Comarca,
@@ -70,7 +170,7 @@ namespace API.Controllers
                         });
                         
                         _context.AuditoriaLogs.Add(new AuditoriaSync {
-                            UsuarioAppId = request.UsuarioId,
+                            UsuarioAppId = usuarioIdJwt,
                             FincaId = fDto.Id,
                             TipoEntidad = "Finca",
                             Accion = "Insert",
@@ -86,7 +186,7 @@ namespace API.Controllers
                         existing.Longitud = fDto.Lng;
                         
                         _context.AuditoriaLogs.Add(new AuditoriaSync {
-                            UsuarioAppId = request.UsuarioId,
+                            UsuarioAppId = usuarioIdJwt,
                             FincaId = existing.Id,
                             TipoEntidad = "Finca",
                             Accion = "Update",
@@ -197,7 +297,7 @@ namespace API.Controllers
                             .Select(a => (Guid?)a.FincaId)
                             .FirstOrDefaultAsync();
                         _context.AuditoriaLogs.Add(new AuditoriaSync {
-                            UsuarioAppId = request.UsuarioId,
+                            UsuarioAppId = usuarioIdJwt,
                             FincaId = fincaDelAnimal,
                             TipoEntidad = "RegistroSalud",
                             Accion = "Insert"
@@ -231,7 +331,7 @@ namespace API.Controllers
                         }
                         
                         _context.AuditoriaLogs.Add(new AuditoriaSync {
-                            UsuarioAppId = request.UsuarioId,
+                            UsuarioAppId = usuarioIdJwt,
                             FincaId = existing.Animal?.FincaId,
                             TipoEntidad = "RegistroSalud",
                             Accion = "Update"

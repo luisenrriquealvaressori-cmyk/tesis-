@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
+import '../data/local_database.dart';
 
 class AuthProvider extends ChangeNotifier {
   String? _token;
@@ -39,15 +40,26 @@ class AuthProvider extends ChangeNotifier {
         Uri.parse('$_baseUrl/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'telefono': telefono, 'clave': clave}),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 35));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _token = data['token'];
-        _usuarioId = data['usuarioId'];
-        _nombre = data['nombre'];
+        final nuevoUsuarioId = data['usuarioId'] as String;
 
         final prefs = await SharedPreferences.getInstance();
+        final prevUsuarioId = prefs.getString('agro_userid');
+
+        // CRÍTICO: Si el usuario que inicia sesión es diferente al que
+        // tenía sesión anterior, limpiar todos los datos locales SQLite
+        // para evitar que un ganadero vea datos de otro.
+        if (prevUsuarioId != null && prevUsuarioId != nuevoUsuarioId) {
+          await LocalDatabase.instance.clearUserData();
+        }
+
+        _token = data['token'];
+        _usuarioId = nuevoUsuarioId;
+        _nombre = data['nombre'];
+
         await prefs.setString('agro_token', _token!);
         await prefs.setString('agro_userid', _usuarioId!);
         await prefs.setString('agro_nombre', _nombre!);
@@ -90,7 +102,7 @@ class AuthProvider extends ChangeNotifier {
           'municipioId': municipioId,
           'comarca': comarca,
         }),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 35));
 
       if (response.statusCode == 200) {
         // Intentar iniciar sesión automáticamente con las credenciales registradas
@@ -125,6 +137,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Limpiar datos operativos del SQLite local antes de cerrar sesión.
+    // Garantiza que el siguiente usuario que ingrese no vea datos ajenos.
+    await LocalDatabase.instance.clearUserData();
+
     _token = null;
     _usuarioId = null;
     _nombre = null;

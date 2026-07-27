@@ -99,6 +99,14 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
       return;
     }
 
+    if (_selectedMedicamento != null) {
+      final dosisVal = double.tryParse(_dosisController.text.trim());
+      if (dosisVal == null || dosisVal <= 0) {
+        _showError('Ingresa una dosis válida mayor a 0 para el medicamento seleccionado');
+        return;
+      }
+    }
+
     setState(() => _isSaving = true);
     try {
       final registroId = _uuid.v4();

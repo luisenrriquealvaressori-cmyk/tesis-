@@ -23,14 +23,19 @@ class CatalogSyncService {
 
   /// Descarga todos los catálogos del servidor y los guarda en SQLite.
   /// Retorna `true` si fue exitoso, `false` si hubo error de red.
-  static Future<bool> downloadAndCache(String token) async {
+  static Future<bool> downloadAndCache([String? token]) async {
     try {
+      final headers = <String, String>{};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http
           .get(
             Uri.parse('$_baseUrl/api/sync/pull'),
-            headers: {'Authorization': 'Bearer $token'},
+            headers: headers,
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 35));
 
       if (response.statusCode != 200) {
         return false;

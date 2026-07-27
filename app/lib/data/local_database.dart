@@ -690,6 +690,32 @@ CREATE TABLE IF NOT EXISTS tratamientos (
   // HELPERS: Métodos genéricos y filtrados adicionales
   // =========================================================================
 
+  // =========================================================================
+  // GESTIÓN DE SESIÓN: Limpieza de datos al cambiar de usuario
+  // =========================================================================
+
+  /// Borra **únicamente los datos operativos** del usuario (Bloque B):
+  /// fincas, animales, producción de leche, registros de salud y tratamientos.
+  ///
+  /// Los catálogos (razas, enfermedades, medicamentos, geografía) se conservan
+  /// ya que son datos globales del sistema, no pertenecen a ningún usuario.
+  ///
+  /// Debe llamarse en dos casos:
+  /// 1. Al hacer logout (para que el siguiente usuario no vea datos ajenos).
+  /// 2. Al detectar que el usuarioId del token nuevo ≠ al del token guardado.
+  Future<void> clearUserData() async {
+    final db = await instance.database;
+    await db.transaction((txn) async {
+      // Orden importante: respetar FK (hijos antes que padres)
+      await txn.delete('registro_salud_sintomas');
+      await txn.delete('tratamientos');
+      await txn.delete('registros_salud');
+      await txn.delete('produccion_leche');
+      await txn.delete('animales');
+      await txn.delete('fincas');
+    });
+  }
+
   /// Obtiene todos los registros de una tabla catálogo sin filtros.
   Future<List<Map<String, dynamic>>> getAll(String table) async {
     final db = await instance.database;

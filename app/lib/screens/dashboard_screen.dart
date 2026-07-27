@@ -24,7 +24,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double _promedioVacaDia = 0.0;
   double _totalUGM = 0.0;
   int _vacasEnRetiroCount = 0;
-  List<Map<String, dynamic>> _vacasEnRetiro = [];
 
   List<Map<String, dynamic>> _ultimosRegistros = [];
 
@@ -52,7 +51,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _promedioVacaDia = (kpis['promedioVacaDia'] as num).toDouble();
           _totalUGM = (kpis['totalUGM'] as num).toDouble();
           _vacasEnRetiroCount = kpis['vacasEnRetiroCount'] as int;
-          _vacasEnRetiro = List<Map<String, dynamic>>.from(kpis['vacasEnRetiro']);
           _ultimosRegistros = ultimosRegistros;
           _isLoading = false;
         });
@@ -145,40 +143,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Alerta Sanitaria de Retiro de Leche (si hay vacas en tratamiento)
               if (_vacasEnRetiroCount > 0) ...[
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.amber.shade400, width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 32),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '⚠️ Alerta de Retiro Sanitario: $_vacasEnRetiroCount vaca(s)',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade900, fontSize: 14),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Leche bajo tratamiento médico. No apta para consumo ni venta comercial.',
-                              style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _PulsingAlert(count: _vacasEnRetiroCount),
                 const SizedBox(height: 20),
               ],
+
               
               // Metrics Cards Grid (4 tarjetas KPI)
               Row(
@@ -429,3 +398,147 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+
+/// Alerta sanitaria animada con efecto de pulso.
+/// Se muestra en el dashboard cuando hay vacas en período de retiro de leche.
+class _PulsingAlert extends StatefulWidget {
+  final int count;
+  const _PulsingAlert({required this.count});
+
+  @override
+  State<_PulsingAlert> createState() => _PulsingAlertState();
+}
+
+class _PulsingAlertState extends State<_PulsingAlert>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulse;
+  late Animation<double> _glow;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _pulse = Tween<double>(begin: 1.0, end: 1.035).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _glow = Tween<double>(begin: 0.3, end: 0.65).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _pulse.value,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFDC2626).withValues(alpha: _glow.value * 0.4),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7F1D1D), Color(0xFFB45309)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  // Ícono con borde pulsante
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: _glow.value),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.medical_services_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${widget.count} vaca${widget.count > 1 ? 's' : ''}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'RETIRO SANITARIO',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Leche bajo tratamiento médico — no apta para consumo ni venta',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
