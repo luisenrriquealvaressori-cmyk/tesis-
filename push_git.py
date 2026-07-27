@@ -12,7 +12,7 @@ res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print(res1.stdout, res1.stderr)
 
 commit_msg = (
-    "fix: proyectar DTOs sin ciclos en SyncController.cs y hacer el mapeo JSON a prueba de fallos en la app"
+    "fix: eliminar restricción NOT NULL en sintomas.enfermedad_id y usar UPSERT sin borrado en SQLite para resolver fallo de carga de catálogos y municipios"
 )
 
 print("[3/4] Creando commit en Git...")

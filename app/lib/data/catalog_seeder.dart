@@ -12,6 +12,7 @@
 // ============================================================================
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'local_database.dart';
 import '../config/api_config.dart';
@@ -54,20 +55,26 @@ class CatalogSyncService {
           .toList();
 
       final List<Map<String, dynamic>> municipios = ((data['municipios'] ?? data['Municipios']) as List? ?? [])
-          .map((m) => {
-                'id': (m['id'] ?? m['Id'])?.toString() ?? '',
-                'departamento_id': (m['departamentoId'] ?? m['departamento_id'] ?? m['DepartamentoId'])?.toString() ?? '',
-                'nombre': (m['nombre'] ?? m['Nombre'])?.toString() ?? '',
-              })
+          .map((m) {
+            final depId = (m['departamentoId'] ?? m['departamento_id'] ?? m['DepartamentoId'])?.toString();
+            return {
+              'id': (m['id'] ?? m['Id'])?.toString() ?? '',
+              'departamento_id': (depId != null && depId.trim().isNotEmpty) ? depId.trim() : null,
+              'nombre': (m['nombre'] ?? m['Nombre'])?.toString() ?? '',
+            };
+          })
           .where((m) => (m['id'] as String).isNotEmpty)
           .toList();
 
       final List<Map<String, dynamic>> comarcas = ((data['comarcas'] ?? data['Comarcas']) as List? ?? [])
-          .map((c) => {
-                'id': (c['id'] ?? c['Id'])?.toString() ?? '',
-                'municipio_id': (c['municipioId'] ?? c['municipio_id'] ?? c['MunicipioId'])?.toString() ?? '',
-                'nombre': (c['nombre'] ?? c['Nombre'])?.toString() ?? '',
-              })
+          .map((c) {
+            final munId = (c['municipioId'] ?? c['municipio_id'] ?? c['MunicipioId'])?.toString();
+            return {
+              'id': (c['id'] ?? c['Id'])?.toString() ?? '',
+              'municipio_id': (munId != null && munId.trim().isNotEmpty) ? munId.trim() : null,
+              'nombre': (c['nombre'] ?? c['Nombre'])?.toString() ?? '',
+            };
+          })
           .where((c) => (c['id'] as String).isNotEmpty)
           .toList();
 
@@ -93,11 +100,14 @@ class CatalogSyncService {
           .toList();
 
       final List<Map<String, dynamic>> sintomas = ((data['sintomas'] ?? data['Sintomas']) as List? ?? [])
-          .map((s) => {
-                'id': (s['id'] ?? s['Id'])?.toString() ?? '',
-                'enfermedad_id': (s['enfermedadId'] ?? s['enfermedad_id'] ?? s['EnfermedadId'])?.toString() ?? '',
-                'nombre': (s['nombre'] ?? s['Nombre'])?.toString() ?? '',
-              })
+          .map((s) {
+            final enfId = (s['enfermedadId'] ?? s['enfermedad_id'] ?? s['EnfermedadId'])?.toString();
+            return {
+              'id': (s['id'] ?? s['Id'])?.toString() ?? '',
+              'enfermedad_id': (enfId != null && enfId.trim().isNotEmpty) ? enfId.trim() : null,
+              'nombre': (s['nombre'] ?? s['Nombre'])?.toString() ?? '',
+            };
+          })
           .where((s) => (s['id'] as String).isNotEmpty)
           .toList();
 
@@ -116,7 +126,7 @@ class CatalogSyncService {
 
       debugPrint('[CatalogSync] Éxito: Descargados ${departamentos.length} deptos, ${municipios.length} munis, ${comarcas.length} comarcas');
 
-      // --- Guardar todo en SQLite limpiando catálogos previos ---
+      // --- Guardar todo en SQLite mediante UPSERT (sin borrar tablas activas) ---
       await LocalDatabase.instance.upsertCatalogoBatch(
         departamentos: departamentos,
         municipios: municipios,
@@ -125,7 +135,7 @@ class CatalogSyncService {
         enfermedades: enfermedades,
         sintomas: sintomas,
         medicamentos: medicamentos,
-        clearFirst: true,
+        clearFirst: false,
       );
 
       return true;

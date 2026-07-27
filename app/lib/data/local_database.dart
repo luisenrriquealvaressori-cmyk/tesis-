@@ -25,7 +25,7 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
       // CRÍTICO: Habilitar integridad referencial en SQLite
@@ -65,11 +65,11 @@ CREATE TABLE IF NOT EXISTS enfermedades (
 )
 ''');
 
-    /// Síntomas vinculados a una enfermedad
+    /// Síntomas vinculados a una enfermedad (enfermedad_id puede ser NULL si aplica a múltiples o en catálogos generales)
     await db.execute('''
 CREATE TABLE IF NOT EXISTS sintomas (
   id             TEXT PRIMARY KEY,
-  enfermedad_id  TEXT NOT NULL,
+  enfermedad_id  TEXT,
   nombre         TEXT NOT NULL,
   FOREIGN KEY (enfermedad_id) REFERENCES enfermedades(id)
     ON DELETE CASCADE ON UPDATE NO ACTION
@@ -255,6 +255,33 @@ CREATE TABLE IF NOT EXISTS tratamientos (
       // Modificar tabla existente de animales para añadir 'estado'
       await db.execute('ALTER TABLE animales ADD COLUMN estado INTEGER NOT NULL DEFAULT 1;');
     }
+
+    if (oldVersion < 4) {
+      // Recrear tabla sintomas sin restricción NOT NULL en enfermedad_id
+      await db.execute('DROP TABLE IF EXISTS registro_salud_sintomas;');
+      await db.execute('DROP TABLE IF EXISTS sintomas;');
+      await db.execute('''
+CREATE TABLE IF NOT EXISTS sintomas (
+  id             TEXT PRIMARY KEY,
+  enfermedad_id  TEXT,
+  nombre         TEXT NOT NULL,
+  FOREIGN KEY (enfermedad_id) REFERENCES enfermedades(id)
+    ON DELETE CASCADE ON UPDATE NO ACTION
+)
+''');
+      await db.execute('''
+CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
+  registro_salud_id  TEXT NOT NULL,
+  sintoma_id         TEXT NOT NULL,
+  PRIMARY KEY (registro_salud_id, sintoma_id),
+  FOREIGN KEY (registro_salud_id) REFERENCES registros_salud(id)
+    ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (sintoma_id)        REFERENCES sintomas(id)
+    ON DELETE RESTRICT ON UPDATE NO ACTION
+)
+''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_sintomas_enfermedad_id ON sintomas(enfermedad_id);');
+    }
   }
 
   // =========================================================================
@@ -272,28 +299,37 @@ CREATE TABLE IF NOT EXISTS tratamientos (
     List<Map<String, dynamic>> departamentos = const [],
     List<Map<String, dynamic>> municipios = const [],
     List<Map<String, dynamic>> comarcas = const [],
-    bool clearFirst = true,
+    bool clearFirst = false,
   }) async {
     final db = await instance.database;
     await db.transaction((txn) async {
       if (clearFirst) {
-        if (departamentos.isNotEmpty) await txn.delete('departamentos');
-        if (municipios.isNotEmpty) await txn.delete('municipios');
+        // Borrar en orden jerárquico inverso para evitar violaciones de clave foránea
         if (comarcas.isNotEmpty) await txn.delete('comarcas');
-        if (razas.isNotEmpty) await txn.delete('razas');
-        if (enfermedades.isNotEmpty) await txn.delete('enfermedades');
-        if (sintomas.isNotEmpty) await txn.delete('sintomas');
+        if (municipios.isNotEmpty) await txn.delete('municipios');
+        if (departamentos.isNotEmpty) await txn.delete('departamentos');
         if (medicamentos.isNotEmpty) await txn.delete('medicamentos');
+        if (sintomas.isNotEmpty) await txn.delete('sintomas');
+        if (enfermedades.isNotEmpty) await txn.delete('enfermedades');
+        if (razas.isNotEmpty) await txn.delete('razas');
       }
 
       for (final d in departamentos) {
         await txn.insert('departamentos', d, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (final m in municipios) {
-        await txn.insert('municipios', m, conflictAlgorithm: ConflictAlgorithm.replace);
+        final item = Map<String, dynamic>.from(m);
+        if (item['departamento_id'] is String && (item['departamento_id'] as String).trim().isEmpty) {
+          item['departamento_id'] = null;
+        }
+        await txn.insert('municipios', item, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (final c in comarcas) {
-        await txn.insert('comarcas', c, conflictAlgorithm: ConflictAlgorithm.replace);
+        final item = Map<String, dynamic>.from(c);
+        if (item['municipio_id'] is String && (item['municipio_id'] as String).trim().isEmpty) {
+          item['municipio_id'] = null;
+        }
+        await txn.insert('comarcas', item, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (final r in razas) {
         await txn.insert('razas', r, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -302,7 +338,11 @@ CREATE TABLE IF NOT EXISTS tratamientos (
         await txn.insert('enfermedades', e, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (final s in sintomas) {
-        await txn.insert('sintomas', s, conflictAlgorithm: ConflictAlgorithm.replace);
+        final item = Map<String, dynamic>.from(s);
+        if (item['enfermedad_id'] is String && (item['enfermedad_id'] as String).trim().isEmpty) {
+          item['enfermedad_id'] = null;
+        }
+        await txn.insert('sintomas', item, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (final m in medicamentos) {
         await txn.insert('medicamentos', m, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -322,7 +362,12 @@ CREATE TABLE IF NOT EXISTS tratamientos (
 
   Future<List<Map<String, dynamic>>> getSintomasByEnfermedad(String enfermedadId) async {
     final db = await instance.database;
-    return await db.query('sintomas', where: 'enfermedad_id = ?', whereArgs: [enfermedadId]);
+    return await db.query(
+      'sintomas',
+      where: 'enfermedad_id = ? OR enfermedad_id IS NULL OR enfermedad_id = ""',
+      whereArgs: [enfermedadId],
+      orderBy: 'nombre ASC',
+    );
   }
 
   Future<List<Map<String, dynamic>>> getMedicamentos() async {
