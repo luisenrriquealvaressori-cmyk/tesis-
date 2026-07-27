@@ -35,12 +35,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             IconData cloudIcon = Icons.cloud_off;
             Color iconColor = Colors.grey;
 
-            if (syncProvider.currentState == SyncState.synced) {
-              cloudIcon = Icons.cloud_done;
-              iconColor = Colors.green;
-            } else if (syncProvider.currentState == SyncState.pending) {
-              cloudIcon = Icons.cloud_upload;
-              iconColor = Colors.orange;
+            if (syncProvider.isServerOnline) {
+              cloudIcon = syncProvider.pendingCount > 0 ? Icons.cloud_upload : Icons.cloud_done;
+              iconColor = syncProvider.pendingCount > 0 ? Colors.orange : Colors.green;
+            } else {
+              cloudIcon = Icons.cloud_off;
+              iconColor = Colors.grey;
             }
 
             return Stack(

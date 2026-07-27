@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/sync_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/notification_service.dart';
 
 class SyncCenterScreen extends StatelessWidget {
   const SyncCenterScreen({super.key});
@@ -88,6 +89,9 @@ class SyncCenterScreen extends StatelessWidget {
         break;
     }
 
+    final isServerUp = sync.isServerOnline;
+    final isChecking = sync.isCheckingServer;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -95,39 +99,87 @@ class SyncCenterScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: statusColor),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: statusColor,
-              shape: BoxShape.circle,
-            ),
-            child: sync.currentState == SyncState.syncing
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Colors.white),
-                  )
-                : Icon(statusIcon, color: Colors.white),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(statusTitle,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(
-                  statusSubtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
+                child: sync.currentState == SyncState.syncing
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(statusIcon, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      statusTitle,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: statusColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      statusSubtitle,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 20),
+          Row(
+            children: [
+              Icon(
+                isServerUp ? Icons.dns : Icons.dns_outlined,
+                color: isServerUp ? Colors.green : Colors.red,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isChecking
+                      ? 'Verificando respuesta del servidor...'
+                      : (isServerUp
+                          ? 'Servidor Backend: EN LÍNEA (Neon DB OK)'
+                          : 'Servidor Backend: DESCONECTADO O EN REPOSO'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isServerUp ? Colors.green.shade800 : Colors.red.shade800,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: isChecking ? null : () => sync.checkServerOnlineStatus(),
+                icon: isChecking
+                    ? const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.refresh, size: 14),
+                label: Text(
+                  isChecking ? '...' : 'Probar API',
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -355,7 +355,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           DropdownButtonFormField<String>(
                             key: ValueKey('depto_select_$_selectedDepartamentoId'),
                             isExpanded: true,
-                            value: _selectedDepartamentoId,
+                            initialValue: _selectedDepartamentoId,
                             hint: const Text(
                               'Selecciona departamento',
                               overflow: TextOverflow.ellipsis,
@@ -383,7 +383,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           DropdownButtonFormField<String>(
                             key: ValueKey('muni_select_$_selectedMunicipioId'),
                             isExpanded: true,
-                            value: _selectedMunicipioId,
+                            initialValue: _selectedMunicipioId,
                             hint: Text(
                               _selectedDepartamentoId == null
                                   ? 'Selecciona departamento primero'
@@ -416,7 +416,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                             DropdownButtonFormField<String>(
                               key: ValueKey('comarca_select_$_selectedComarcaId'),
                               isExpanded: true,
-                              value: _selectedComarcaId,
+                              initialValue: _selectedComarcaId,
                               hint: const Text(
                                 'Selecciona una comarca',
                                 overflow: TextOverflow.ellipsis,

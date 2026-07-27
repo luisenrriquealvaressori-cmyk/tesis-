@@ -23,9 +23,14 @@ class SyncProvider extends ChangeNotifier {
 
   static String get _baseUrl => ApiConfig.baseUrl;
 
+  bool _isServerOnline = false;
+  bool _isCheckingServer = false;
+
   SyncState get currentState => _currentState;
   int get pendingCount => _pendingCount;
   bool get isConnected => _isConnected;
+  bool get isServerOnline => _isServerOnline;
+  bool get isCheckingServer => _isCheckingServer;
   String? get lastError => _lastError;
 
   SyncProvider() {
@@ -40,11 +45,41 @@ class SyncProvider extends ChangeNotifier {
         Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
 
     await refreshPendingCount();
+    await checkServerOnlineStatus();
   }
 
   void _updateConnectionStatus(List<ConnectivityResult> results) {
     _isConnected = !results.contains(ConnectivityResult.none);
     _evaluateState();
+    if (_isConnected) {
+      checkServerOnlineStatus();
+    }
+  }
+
+  /// Realiza un PING HTTP real al servidor backend en Render (Neon DB)
+  /// para verificar en tiempo real si el servidor está en línea o inaccesible.
+  Future<bool> checkServerOnlineStatus() async {
+    if (!_isConnected) {
+      _isServerOnline = false;
+      notifyListeners();
+      return false;
+    }
+
+    _isCheckingServer = true;
+    notifyListeners();
+
+    try {
+      final response = await http
+          .get(Uri.parse('$_baseUrl/api/sync/pull'))
+          .timeout(const Duration(seconds: 15));
+      _isServerOnline = (response.statusCode == 200);
+    } catch (_) {
+      _isServerOnline = false;
+    } finally {
+      _isCheckingServer = false;
+      notifyListeners();
+    }
+    return _isServerOnline;
   }
 
   Future<void> refreshPendingCount() async {
