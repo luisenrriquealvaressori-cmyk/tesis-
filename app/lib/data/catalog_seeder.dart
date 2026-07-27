@@ -104,7 +104,7 @@ class CatalogSyncService {
               })
           .toList();
 
-      // --- Guardar todo en SQLite en un solo batch transaccional ---
+      // --- Guardar todo en SQLite limpiando catálogos previos ---
       await LocalDatabase.instance.upsertCatalogoBatch(
         departamentos: departamentos,
         municipios: municipios,
@@ -113,6 +113,7 @@ class CatalogSyncService {
         enfermedades: enfermedades,
         sintomas: sintomas,
         medicamentos: medicamentos,
+        clearFirst: true,
       );
 
       return true;
@@ -123,52 +124,11 @@ class CatalogSyncService {
     }
   }
 
-  /// Siembra catálogos geográficos iniciales de respaldo en SQLite si la tabla de departamentos está vacía.
+  /// Método sin catálogos locales por defecto: garantiza que no se muestren
+  /// registros ficticios y que sólo se desplieguen los catálogos de Neon DB.
   static Future<void> ensureBaseCatalogs() async {
-    final deptos = await LocalDatabase.instance.getAll('departamentos');
-    if (deptos.isNotEmpty) return;
-
-    final defaultDeptos = [
-      {'id': 'depto-chontales', 'nombre': 'Chontales'},
-      {'id': 'depto-boaco', 'nombre': 'Boaco'},
-      {'id': 'depto-matagalpa', 'nombre': 'Matagalpa'},
-      {'id': 'depto-managua', 'nombre': 'Managua'},
-      {'id': 'depto-esteli', 'nombre': 'Estelí'},
-      {'id': 'depto-rivas', 'nombre': 'Rivas'},
-      {'id': 'depto-leon', 'nombre': 'León'},
-      {'id': 'depto-rio-san-juan', 'nombre': 'Río San Juan'},
-      {'id': 'depto-raccs', 'nombre': 'RACCS'},
-      {'id': 'depto-raccn', 'nombre': 'RACCN'},
-    ];
-
-    final defaultMunis = [
-      {'id': 'muni-juigalpa', 'departamento_id': 'depto-chontales', 'nombre': 'Juigalpa'},
-      {'id': 'muni-acoyapa', 'departamento_id': 'depto-chontales', 'nombre': 'Acoyapa'},
-      {'id': 'muni-santo-tomas', 'departamento_id': 'depto-chontales', 'nombre': 'Santo Tomás'},
-      {'id': 'muni-camoapa', 'departamento_id': 'depto-boaco', 'nombre': 'Camoapa'},
-      {'id': 'muni-boaco', 'departamento_id': 'depto-boaco', 'nombre': 'Boaco'},
-      {'id': 'muni-matagalpa', 'departamento_id': 'depto-matagalpa', 'nombre': 'Matagalpa'},
-      {'id': 'muni-sebaco', 'departamento_id': 'depto-matagalpa', 'nombre': 'Sébaco'},
-      {'id': 'muni-tipitapa', 'departamento_id': 'depto-managua', 'nombre': 'Tipitapa'},
-      {'id': 'muni-managua', 'departamento_id': 'depto-managua', 'nombre': 'Managua'},
-      {'id': 'muni-esteli', 'departamento_id': 'depto-esteli', 'nombre': 'Estelí'},
-      {'id': 'muni-tola', 'departamento_id': 'depto-rivas', 'nombre': 'Tola'},
-      {'id': 'muni-el-rama', 'departamento_id': 'depto-raccs', 'nombre': 'El Rama'},
-      {'id': 'muni-nueva-guinea', 'departamento_id': 'depto-raccs', 'nombre': 'Nueva Guinea'},
-    ];
-
-    final defaultComarcas = [
-      {'id': 'com-1', 'municipio_id': 'muni-juigalpa', 'nombre': 'Puerto Díaz'},
-      {'id': 'com-2', 'municipio_id': 'muni-juigalpa', 'nombre': 'Amerrisque'},
-      {'id': 'com-3', 'municipio_id': 'muni-camoapa', 'nombre': 'Salinas'},
-      {'id': 'com-4', 'municipio_id': 'muni-santo-tomas', 'nombre': 'El Zapote'},
-    ];
-
-    await LocalDatabase.instance.upsertCatalogoBatch(
-      departamentos: defaultDeptos,
-      municipios: defaultMunis,
-      comarcas: defaultComarcas,
-    );
+    // No insertar datos ficticios o por defecto.
+    return;
   }
 }
 

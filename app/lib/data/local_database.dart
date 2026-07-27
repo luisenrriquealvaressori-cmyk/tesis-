@@ -261,7 +261,9 @@ CREATE TABLE IF NOT EXISTS tratamientos (
   // CRUD: CATÁLOGOS (escritura batch desde sync con el servidor)
   // =========================================================================
 
-  /// Reemplaza todos los catálogos descargados del servidor
+  /// Reemplaza todos los catálogos descargados del servidor.
+  /// Si [clearFirst] es true, limpia las tablas locales antes de insertar
+  /// para reflejar únicamente lo que existe en la base de datos remota.
   Future<void> upsertCatalogoBatch({
     List<Map<String, dynamic>> razas = const [],
     List<Map<String, dynamic>> enfermedades = const [],
@@ -270,9 +272,29 @@ CREATE TABLE IF NOT EXISTS tratamientos (
     List<Map<String, dynamic>> departamentos = const [],
     List<Map<String, dynamic>> municipios = const [],
     List<Map<String, dynamic>> comarcas = const [],
+    bool clearFirst = true,
   }) async {
     final db = await instance.database;
     await db.transaction((txn) async {
+      if (clearFirst) {
+        if (departamentos.isNotEmpty) await txn.delete('departamentos');
+        if (municipios.isNotEmpty) await txn.delete('municipios');
+        if (comarcas.isNotEmpty) await txn.delete('comarcas');
+        if (razas.isNotEmpty) await txn.delete('razas');
+        if (enfermedades.isNotEmpty) await txn.delete('enfermedades');
+        if (sintomas.isNotEmpty) await txn.delete('sintomas');
+        if (medicamentos.isNotEmpty) await txn.delete('medicamentos');
+      }
+
+      for (final d in departamentos) {
+        await txn.insert('departamentos', d, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final m in municipios) {
+        await txn.insert('municipios', m, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final c in comarcas) {
+        await txn.insert('comarcas', c, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
       for (final r in razas) {
         await txn.insert('razas', r, conflictAlgorithm: ConflictAlgorithm.replace);
       }
@@ -284,15 +306,6 @@ CREATE TABLE IF NOT EXISTS tratamientos (
       }
       for (final m in medicamentos) {
         await txn.insert('medicamentos', m, conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      for (final d in departamentos) {
-        await txn.insert('departamentos', d, conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      for (final m in municipios) {
-        await txn.insert('municipios', m, conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      for (final c in comarcas) {
-        await txn.insert('comarcas', c, conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });
   }
