@@ -33,15 +33,20 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _runStartupSequence() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    // Asegurar que existan catálogos base locales
+    await CatalogSyncService.ensureBaseCatalogs();
+
     // Si no está autenticado, redirigir directo al login
     if (!authProvider.isAuthenticated) {
       if (mounted) context.go('/login');
       return;
     }
 
-    // Si está autenticado, descargar catálogos con su token
-    _setStatus('Actualizando catálogos...');
-    await CatalogSyncService.downloadAndCache(authProvider.token!);
+    // Si está autenticado con token del servidor, descargar catálogos actualizados
+    if (authProvider.token != null && !authProvider.token!.startsWith('local_token')) {
+      _setStatus('Actualizando catálogos...');
+      await CatalogSyncService.downloadAndCache(authProvider.token!);
+    }
 
     // Verificar si el usuario ya configuró su finca
     _setStatus('Verificando configuración...');
@@ -55,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
       // Usuario regresando → ir al dashboard
       context.go('/dashboard');
     } else {
-      // Primera vez → configurar la finca
+      // Primera vez → configurar la finca / completar perfil
       context.go('/setup');
     }
   }

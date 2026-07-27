@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../data/local_database.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/custom_app_bar.dart';
 
 class FarmSetupScreen extends StatefulWidget {
@@ -14,7 +16,14 @@ class FarmSetupScreen extends StatefulWidget {
 
 class _FarmSetupScreenState extends State<FarmSetupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  
+  // Controladores de texto
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _farmNameController = TextEditingController(); // OPCIONAL
+  final _comarcaController = TextEditingController();
+  
   final _uuid = const Uuid();
 
   // Catálogos cargados desde SQLite
@@ -35,18 +44,28 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDepartamentos();
+    _loadCatalogs();
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _farmNameController.dispose();
+    _comarcaController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadDepartamentos() async {
+  Future<void> _loadCatalogs() async {
     setState(() => _isLoadingCatalogs = true);
     final deptos = await LocalDatabase.instance.getAll('departamentos');
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.nombre != null && authProvider.nombre!.isNotEmpty) {
+      _fullNameController.text = authProvider.nombre!;
+    }
+    
     setState(() {
       _departamentos = deptos;
       _isLoadingCatalogs = false;
@@ -95,7 +114,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
         }
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Permisos denegados permanentemente.');
+        throw Exception('Permisos de ubicación denegados permanentemente.');
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -113,7 +132,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
     }
   }
 
-  Future<void> _saveFinca() async {
+  Future<void> _saveOnboardingAndFarm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedMunicipio == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,14 +143,45 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
 
     setState(() => _isSaving = true);
     try {
-      final fincaId = _uuid.v4();
-      final comarca = _selectedComarca?['nombre'] as String? ?? '';
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final comarcaText = _selectedComarca?['nombre'] as String? ?? _comarcaController.text.trim();
+      final municipioId = _selectedMunicipio!['id'] as String;
 
+      // 1. Si no estaba autenticado, registrar usuario
+      if (!authProvider.isAuthenticated) {
+        final registered = await authProvider.register(
+          nombre: _fullNameController.text.trim(),
+          telefono: _phoneController.text.trim(),
+          clave: _passwordController.text.trim().isNotEmpty 
+              ? _passwordController.text.trim() 
+              : '123456',
+          municipioId: municipioId,
+          comarca: comarcaText,
+        );
+
+        if (!registered) {
+          await authProvider.setLocalSession(
+            nombre: _fullNameController.text.trim(),
+            telefono: _phoneController.text.trim(),
+          );
+        }
+      }
+
+      // 2. Definir Nombre de Finca (OPCIONAL: si no lo ingresa, se usa por defecto)
+      String farmName = _farmNameController.text.trim();
+      if (farmName.isEmpty) {
+        final nameOwner = _fullNameController.text.trim();
+        farmName = nameOwner.isNotEmpty ? 'Finca de $nameOwner' : 'Finca Principal';
+      }
+
+      final fincaId = _uuid.v4();
+
+      // 3. Insertar Finca en SQLite local
       await LocalDatabase.instance.insertFinca({
         'id': fincaId,
-        'nombre': _nameController.text.trim(),
-        'municipio_id': _selectedMunicipio!['id'],
-        'comarca': comarca,
+        'nombre': farmName,
+        'municipio_id': municipioId,
+        'comarca': comarcaText,
         'latitud': _currentPosition?.latitude ?? 0.0,
         'longitud': _currentPosition?.longitude ?? 0.0,
         'created_at': DateTime.now().toIso8601String(),
@@ -142,10 +192,11 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Finca guardada correctamente'),
+            content: Text('✅ Registro completado y finca creada exitosamente'),
             backgroundColor: Colors.green,
           ),
         );
+        // Ir a la página principal / Dashboard
         context.go('/dashboard');
       }
     } catch (e) {
@@ -161,6 +212,8 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Scaffold(
       appBar: const CustomAppBar(),
       body: _isLoadingCatalogs
@@ -174,41 +227,80 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Configuración de Finca',
+                        'Registro de Cuenta y Finca',
                         style: Theme.of(context).textTheme.headlineLarge,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Ingresa los datos de tu propiedad para comenzar a operar.',
+                        'Completa tus datos personales y los de tu propiedad para comenzar.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: 24),
 
-                      // --- Sección datos de la finca ---
+                      // --- Sección 1: Datos Personales del Ganadero ---
                       _buildCard(
+                        title: '1. Datos Personales',
                         children: [
-                          _buildLabel('Nombre de la finca *'),
+                          _buildLabel('Nombre Completo *'),
                           const SizedBox(height: 8),
                           TextFormField(
-                            controller: _nameController,
+                            controller: _fullNameController,
                             decoration: const InputDecoration(
-                              hintText: 'Ej: Finca San José',
-                              prefixIcon: Icon(Icons.home_work),
+                              hintText: 'Ej: Juan Pérez Castellón',
+                              prefixIcon: Icon(Icons.person),
                             ),
                             validator: (v) =>
-                                (v == null || v.trim().isEmpty) ? 'Ingresa el nombre' : null,
+                                (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre completo' : null,
                           ),
                           const SizedBox(height: 16),
 
+                          _buildLabel('Número de Teléfono *'),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            decoration: const InputDecoration(
+                              hintText: 'Ej: 88889999',
+                              prefixIcon: Icon(Icons.phone),
+                            ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty) ? 'Ingresa tu teléfono' : null,
+                          ),
+                          const SizedBox(height: 16),
+
+                          if (!authProvider.isAuthenticated) ...[
+                            _buildLabel('Contraseña *'),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                hintText: 'Crea una contraseña segura',
+                                prefixIcon: Icon(Icons.lock),
+                              ),
+                              validator: (v) =>
+                                  (v == null || v.trim().isEmpty) ? 'Ingresa una contraseña' : null,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // --- Sección 2: Ubicación Geográfica ---
+                      _buildCard(
+                        title: '2. Ubicación Geográfica',
+                        children: [
                           // Departamento
                           _buildLabel('Departamento *'),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<Map<String, dynamic>>(
                             key: ValueKey(_selectedDepartamento),
                             initialValue: _selectedDepartamento,
-                            hint: const Text('Selecciona un departamento'),
+                            hint: const Text('Selecciona departamento'),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.map),
                             ),
@@ -251,44 +343,69 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           const SizedBox(height: 16),
 
                           // Comarca
-                          _buildLabel('Comarca (opcional)'),
+                          _buildLabel('Comarca *'),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<Map<String, dynamic>>(
-                            key: ValueKey(_selectedComarca),
-                            initialValue: _selectedComarca,
-                            hint: Text(
-                              _selectedMunicipio == null
-                                  ? 'Selecciona municipio primero'
-                                  : _comarcas.isEmpty
-                                      ? 'No hay comarcas registradas'
-                                      : 'Selecciona una comarca',
+                          if (_comarcas.isNotEmpty) ...[
+                            DropdownButtonFormField<Map<String, dynamic>>(
+                              key: ValueKey(_selectedComarca),
+                              initialValue: _selectedComarca,
+                              hint: const Text('Selecciona una comarca'),
+                              decoration: const InputDecoration(
+                                prefixIcon: Icon(Icons.place),
+                              ),
+                              items: _comarcas
+                                  .map((c) => DropdownMenuItem(
+                                        value: c,
+                                        child: Text(c['nombre'] as String),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _selectedComarca = v),
                             ),
+                          ] else ...[
+                            TextFormField(
+                              controller: _comarcaController,
+                              decoration: const InputDecoration(
+                                hintText: 'Ej: Comarca San Antonio',
+                                prefixIcon: Icon(Icons.place),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // --- Sección 3: Datos de la Finca (Nombre Opcional) ---
+                      _buildCard(
+                        title: '3. Información de la Finca',
+                        children: [
+                          _buildLabel('Nombre de la Finca (Opcional)'),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Si lo dejas en blanco, se asignará un nombre predeterminado.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _farmNameController,
                             decoration: const InputDecoration(
-                              prefixIcon: Icon(Icons.place),
+                              hintText: 'Ej: Finca San José (Opcional)',
+                              prefixIcon: Icon(Icons.agriculture),
                             ),
-                            items: _comarcas
-                                .map((c) => DropdownMenuItem(
-                                      value: c,
-                                      child: Text(c['nombre'] as String),
-                                    ))
-                                .toList(),
-                            onChanged:
-                                _selectedMunicipio == null || _comarcas.isEmpty
-                                    ? null
-                                    : (v) => setState(() => _selectedComarca = v),
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 16),
 
-                      // --- Sección ubicación GPS ---
+                      // --- Sección 4: Ubicación GPS ---
                       _buildCard(
+                        title: '4. Coordenadas GPS',
                         children: [
-                          _buildLabel('Ubicación GPS'),
-                          const SizedBox(height: 8),
                           Text(
-                            'Captura las coordenadas de tu finca para registros satelitales.',
+                            'Captura la posición GPS de tu finca para el registro cartográfico.',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
@@ -305,10 +422,10 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                                   )
                                 : const Icon(Icons.my_location),
                             label: Text(_isGettingLocation
-                                ? 'Capturando...'
-                                : 'Capturar ubicación satelital'),
+                                ? 'Capturando Coordenadas...'
+                                : 'Capturar Ubicación GPS'),
                             style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 56),
+                              minimumSize: const Size(double.infinity, 52),
                               backgroundColor: Colors.blue[700],
                               foregroundColor: Colors.white,
                             ),
@@ -345,7 +462,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                                   child: Text(
                                     _currentPosition != null
                                         ? 'Lat: ${_currentPosition!.latitude.toStringAsFixed(5)}, Lng: ${_currentPosition!.longitude.toStringAsFixed(5)}'
-                                        : 'Ubicación no capturada (opcional)',
+                                        : 'Ubicación GPS no capturada aún (opcional)',
                                     style: Theme.of(context).textTheme.bodyMedium,
                                   ),
                                 ),
@@ -368,15 +485,15 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
               top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
         ),
         child: ElevatedButton.icon(
-          onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveFinca,
+          onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveOnboardingAndFarm,
           icon: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
-              : const Icon(Icons.save),
-          label: Text(_isSaving ? 'Guardando...' : 'Guardar y Empezar'),
+              : const Icon(Icons.check_circle),
+          label: Text(_isSaving ? 'Guardando...' : 'Completar y Entrar'),
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 56),
           ),
@@ -385,18 +502,27 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
     );
   }
 
-  Widget _buildCard({required List<Widget> children}) {
+  Widget _buildCard({required String title, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
       ),
     );
   }

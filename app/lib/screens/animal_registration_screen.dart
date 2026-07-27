@@ -265,6 +265,63 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
                               ),
                             ),
                           ),
+
+                          // Cálculos Zootécnicos Estimados en tiempo real
+                          if (_fechaNacimiento != null) ...[
+                            const SizedBox(height: 16),
+                            Builder(
+                              builder: (context) {
+                                final dias = DateTime.now().difference(_fechaNacimiento!).inDays;
+                                final meses = (dias / 30.44).floor();
+                                final anios = (meses / 12).toStringAsFixed(1);
+                                
+                                String categoria = 'Ternero/a';
+                                double ugm = 0.4;
+                                if (meses >= 24) {
+                                  categoria = _sexo == 2 ? 'Toro Reproductor' : 'Vaca Adulta';
+                                  ugm = _sexo == 2 ? 1.2 : 1.0;
+                                } else if (meses >= 12) {
+                                  categoria = _sexo == 2 ? 'Novillo' : 'Vaquilla';
+                                  ugm = 0.7;
+                                } else if (meses >= 6) {
+                                  categoria = 'Destaque';
+                                  ugm = 0.4;
+                                }
+
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Theme.of(context).colorScheme.primaryContainer),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.analytics, size: 18, color: Theme.of(context).colorScheme.primary),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Indicadores Zootécnicos Estimados',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text('• Edad: $meses meses (~$anios años)'),
+                                      Text('• Categoría: $categoria'),
+                                      Text('• Equivalencia UGM: $ugm UGM'),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ],
                       ),
                     ),

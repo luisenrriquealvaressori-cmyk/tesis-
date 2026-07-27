@@ -62,11 +62,11 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surface,
         elevation: 1.5,
-        shadowColor: Colors.black.withOpacity(0.08),
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       textTheme: GoogleFonts.interTextTheme().copyWith(
-        headlineLarge: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.extrabold, color: primary, letterSpacing: -0.5),
+        headlineLarge: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: primary, letterSpacing: -0.5),
         headlineMedium: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: onSurface),
         titleLarge: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: onSurface),
         bodyLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500),

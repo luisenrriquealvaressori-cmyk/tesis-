@@ -18,6 +18,9 @@ class _MilkingRegistrationScreenState
   int _jornada = 1;
 
   List<Map<String, dynamic>> _animales = [];
+  // Set con IDs de animales en período de retiro de leche por medicamentos
+  Set<String> _animalesEnRetiroIds = {};
+  
   // Map: animalId → TextEditingController para litros
   final Map<String, TextEditingController> _controllers = {};
 
@@ -42,9 +45,14 @@ class _MilkingRegistrationScreenState
   Future<void> _loadAnimales() async {
     final finca = await LocalDatabase.instance.getFinca();
     if (finca != null) {
+      final fincaId = finca['id'] as String;
+
+      // Cargar vacas en retiro sanitario (tiempo de carencia de medicamentos)
+      final retiroList = await LocalDatabase.instance.getAnimalesEnRetiroLeche(fincaId);
+      final retiroIds = retiroList.map((r) => r['animal_id'] as String).toSet();
+
       // Solo hembras (sexo=1) pueden producir leche
-      final todos = await LocalDatabase.instance
-          .getAnimalesByFinca(finca['id'] as String);
+      final todos = await LocalDatabase.instance.getAnimalesByFinca(fincaId);
       final hembras = todos.where((a) => (a['sexo'] as int) == 1).toList();
 
       // Crear un controller por cada animal hembra
@@ -55,11 +63,20 @@ class _MilkingRegistrationScreenState
 
       setState(() {
         _animales = hembras;
+        _animalesEnRetiroIds = retiroIds;
         _isLoading = false;
       });
     } else {
       setState(() => _isLoading = false);
     }
+  }
+
+  double _calcularTotalLitros() {
+    double total = 0.0;
+    for (final controller in _controllers.values) {
+      total += double.tryParse(controller.text.trim()) ?? 0.0;
+    }
+    return total;
   }
 
   Future<void> _guardarProduccion() async {
@@ -78,6 +95,43 @@ class _MilkingRegistrationScreenState
         ),
       );
       return;
+    }
+
+    // Verificar si se incluyeron vacas en retiro de leche y advertir
+    final vacasRetiroIngresadas = registros
+        .where((a) => _animalesEnRetiroIds.contains(a['id'] as String))
+        .toList();
+
+    if (vacasRetiroIngresadas.isNotEmpty) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red),
+              SizedBox(width: 8),
+              Text('⚠️ Alerta de Leche de Descarte'),
+            ],
+          ),
+          content: Text(
+            'Has ingresado producción para ${vacasRetiroIngresadas.length} vaca(s) bajo tratamiento médico (retiro sanitario por medicamentos).\n\n'
+            '¿Deseas registrar esta producción? Recuerda que esta leche debe ser descartada y NO mezclarse en el tanque de comercialización.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancelar y Revisar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Confirmar y Registrar', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
     }
 
     setState(() => _isSaving = true);
@@ -100,15 +154,13 @@ class _MilkingRegistrationScreenState
       }
 
       if (mounted) {
-        final totalLitros = registros.fold<double>(0, (sum, a) {
-          final id = a['id'] as String;
-          return sum + (double.tryParse(_controllers[id]?.text ?? '') ?? 0.0);
-        });
+        final totalLitros = _calcularTotalLitros();
+        final totalKg = (totalLitros * 1.032).toStringAsFixed(1);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '✅ Producción guardada: ${totalLitros.toStringAsFixed(1)} L en ${registros.length} animales',
+              '✅ Producción guardada: ${totalLitros.toStringAsFixed(1)} L ($totalKg kg) en ${registros.length} animales',
             ),
             backgroundColor: Colors.green,
           ),
@@ -118,6 +170,7 @@ class _MilkingRegistrationScreenState
         for (final c in _controllers.values) {
           c.clear();
         }
+        setState(() {});
       }
     } catch (e) {
       if (mounted) {
@@ -132,13 +185,16 @@ class _MilkingRegistrationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final totalLitros = _calcularTotalLitros();
+    final totalKg = (totalLitros * 1.032).toStringAsFixed(1);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.agriculture),
           onPressed: () => context.go('/dashboard'),
         ),
-        title: const Text('Agro-UX Cattle',
+        title: const Text('Ordeño Diario KPI',
             style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
@@ -152,7 +208,7 @@ class _MilkingRegistrationScreenState
           : SafeArea(
               child: Column(
                 children: [
-                  // Selector de Jornada AM/PM
+                  // Selector de Jornada AM/PM y Resumen en vivo
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -250,14 +306,50 @@ class _MilkingRegistrationScreenState
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Registro de producción (Litros) — ${_jornada == 1 ? 'Mañana' : 'Tarde'}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                        const SizedBox(height: 12),
+
+                        // Barra resumen en vivo (Litros + Kg + Retiro)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Theme.of(context).colorScheme.primaryContainer),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('TOTAL REGISTRADO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                  Text(
+                                    '${totalLitros.toStringAsFixed(1)} L  ($totalKg kg)',
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1B4332)),
+                                  ),
+                                ],
                               ),
+                              if (_animalesEnRetiroIds.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.amber.shade800),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.warning, color: Colors.amber, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${_animalesEnRetiroIds.length} en Retiro',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -302,7 +394,8 @@ class _MilkingRegistrationScreenState
                             itemBuilder: (context, index) {
                               final animal = _animales[index];
                               final id = animal['id'] as String;
-                              return _buildAnimalInput(animal, _controllers[id]!);
+                              final isEnRetiro = _animalesEnRetiroIds.contains(id);
+                              return _buildAnimalInput(animal, _controllers[id]!, isEnRetiro);
                             },
                           ),
                   ),
@@ -321,7 +414,7 @@ class _MilkingRegistrationScreenState
               )
             : const Icon(Icons.save, color: Colors.white),
         label: Text(
-          _isSaving ? 'Guardando...' : 'Guardar Producción Total',
+          _isSaving ? 'Guardando...' : 'Guardar Producción Total (${totalLitros.toStringAsFixed(1)} L)',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -335,41 +428,65 @@ class _MilkingRegistrationScreenState
   }
 
   Widget _buildAnimalInput(
-      Map<String, dynamic> animal, TextEditingController controller) {
+      Map<String, dynamic> animal, TextEditingController controller, bool isEnRetiro) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: isEnRetiro ? Colors.red.shade50 : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border:
-            Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        border: Border.all(
+          color: isEnRetiro ? Colors.red.shade400 : Theme.of(context).colorScheme.outlineVariant,
+          width: isEnRetiro ? 1.5 : 1.0,
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.tertiaryContainer,
+              color: isEnRetiro ? Colors.red.shade100 : Theme.of(context).colorScheme.tertiaryContainer,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.cruelty_free,
-                color: Theme.of(context).colorScheme.onTertiaryContainer),
+            child: Icon(
+              isEnRetiro ? Icons.medical_services : Icons.cruelty_free,
+              color: isEnRetiro ? Colors.red.shade900 : Theme.of(context).colorScheme.onTertiaryContainer,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  animal['identificacion'] as String,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
+                Row(
+                  children: [
+                    Text(
+                      animal['identificacion'] as String,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    if (isEnRetiro) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade600,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'RETIRO',
+                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
-                  '♀ Hembra',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  isEnRetiro ? '⚠️ Bajo Medicamento - Descarte' : '♀ Hembra en Ordeño',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isEnRetiro ? Colors.red.shade900 : Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: isEnRetiro ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ],
             ),
@@ -378,6 +495,7 @@ class _MilkingRegistrationScreenState
             width: 110,
             child: TextFormField(
               controller: controller,
+              onChanged: (_) => setState(() {}),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.right,
@@ -392,7 +510,7 @@ class _MilkingRegistrationScreenState
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant),
+                      color: isEnRetiro ? Colors.red.shade400 : Theme.of(context).colorScheme.outlineVariant),
                 ),
               ),
             ),

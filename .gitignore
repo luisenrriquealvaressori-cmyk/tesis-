@@ -1,0 +1,28 @@
+# Visual Studio
+.vs/
+*.vsidx
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build & Output directories
+bin/
+obj/
+Debug/
+Release/
+
+# Node & Frontend dependencies
+node_modules/
+dist/
+.vite/
+
+# Flutter / Dart
+.dart_tool/
+.fvm/
+.pub-cache/
+build/
+
+# Temporary / OS
+.DS_Store
+Thumbs.db

@@ -80,8 +80,20 @@ export const fetchKpis = async () => {
     return fetchWithAuth('/dashboard/kpis');
 };
 
+export const fetchProduccionTendencia = async () => {
+    return fetchWithAuth('/dashboard/produccion-tendencia');
+};
+
 export const fetchMapaFincas = async () => {
     return fetchWithAuth('/dashboard/mapa-fincas');
+};
+
+export const fetchGanaderos = async () => {
+    return fetchWithAuth('/web-auth/ganaderos');
+};
+
+export const fetchAuditoriaSync = async () => {
+    return fetchWithAuth('/web-auth/auditoria-sync');
 };
 
 export const fetchEnfermedades = async () => {
@@ -94,4 +106,20 @@ export const createEnfermedad = async (enfermedad: any) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(enfermedad)
     });
+};
+
+export const fetchMedicamentos = async () => {
+    return fetchWithAuth('/catalogos/medicamentos');
+};
+
+export const createMedicamento = async (medicamento: any) => {
+    return fetchWithAuth('/catalogos/medicamentos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(medicamento)
+    });
+};
+
+export const fetchRazas = async () => {
+    return fetchWithAuth('/catalogos/razas');
 };

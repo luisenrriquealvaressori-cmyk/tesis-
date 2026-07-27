@@ -94,5 +94,59 @@ namespace API.Controllers
                 return StatusCode(500, new { error = "Fallo al crear la enfermedad", detail = ex.Message });
             }
         }
+
+        [HttpGet("medicamentos")]
+        public async Task<IActionResult> GetMedicamentos()
+        {
+            var medicamentos = await _context.Medicamentos
+                .OrderBy(m => m.NombreComercial)
+                .Select(m => new MedicamentoResponseDto
+                {
+                    Id = m.Id,
+                    NombreComercial = m.NombreComercial,
+                    PrincipioActivo = m.PrincipioActivo,
+                    ViaAdministracion = m.ViaAdministracion,
+                    DiasRetiroLeche = m.DiasRetiroLeche
+                })
+                .ToListAsync();
+
+            return Ok(medicamentos);
+        }
+
+        [HttpPost("medicamentos")]
+        public async Task<IActionResult> CrearMedicamento([FromBody] CrearMedicamentoDto dto)
+        {
+            var med = new Medicamento
+            {
+                Id = Guid.NewGuid(),
+                NombreComercial = dto.NombreComercial.Trim(),
+                PrincipioActivo = dto.PrincipioActivo?.Trim(),
+                ViaAdministracion = dto.ViaAdministracion?.Trim() ?? "Inyectable",
+                DiasRetiroLeche = dto.DiasRetiroLeche
+            };
+
+            _context.Medicamentos.Add(med);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Medicamento registrado correctamente.", id = med.Id });
+        }
+
+        [HttpGet("razas")]
+        public async Task<IActionResult> GetRazas()
+        {
+            var razas = await _context.Razas
+                .OrderBy(r => r.Nombre)
+                .Select(r => new RazaResponseDto
+                {
+                    Id = r.Id,
+                    Nombre = r.Nombre,
+                    OrigenGenetico = r.OrigenGenetico,
+                    Proposito = (int)r.Proposito,
+                    Descripcion = r.Descripcion
+                })
+                .ToListAsync();
+
+            return Ok(razas);
+        }
     }
 }

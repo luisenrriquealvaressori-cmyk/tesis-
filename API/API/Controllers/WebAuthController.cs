@@ -148,5 +148,59 @@ namespace API.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        // GET /api/web-auth/ganaderos
+        // Listar todos los ganaderos registrados desde la APK móvil
+        [HttpGet("ganaderos")]
+        [Authorize]
+        public async Task<IActionResult> GetGanaderos()
+        {
+            var ganaderos = await _context.UsuariosApp
+                .Include(u => u.Municipio)
+                .Include(u => u.Fincas)
+                    .ThenInclude(f => f.Animales)
+                .Select(u => new GanaderoAppDto
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    Telefono = u.Telefono,
+                    Municipio = u.Municipio != null ? u.Municipio.Nombre : "",
+                    Comarca = u.Comarca,
+                    TotalFincas = u.Fincas.Count,
+                    TotalAnimales = u.Fincas.SelectMany(f => f.Animales).Count(),
+                    CreatedAt = u.CreatedAt
+                })
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
+            return Ok(ganaderos);
+        }
+
+        // GET /api/web-auth/auditoria-sync
+        // Listar el historial de auditoría de sincronizaciones móviles recibidas
+        [HttpGet("auditoria-sync")]
+        [Authorize]
+        public async Task<IActionResult> GetAuditoriaSync()
+        {
+            var logs = await _context.AuditoriaLogs
+                .Include(a => a.UsuarioApp)
+                .Include(a => a.Finca)
+                .OrderByDescending(a => a.FechaSincronizacion)
+                .Take(50)
+                .Select(a => new AuditoriaSyncDto
+                {
+                    Id = a.Id,
+                    GanaderoNombre = a.UsuarioApp != null ? a.UsuarioApp.Nombre : "Anónimo",
+                    FincaNombre = a.Finca != null ? a.Finca.Nombre : null,
+                    TipoEntidad = a.TipoEntidad,
+                    Accion = a.Accion,
+                    Latitud = a.Latitud,
+                    Longitud = a.Longitud,
+                    FechaSincronizacion = a.FechaSincronizacion
+                })
+                .ToListAsync();
+
+            return Ok(logs);
+        }
     }
 }

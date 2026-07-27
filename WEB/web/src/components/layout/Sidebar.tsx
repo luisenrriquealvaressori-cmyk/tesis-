@@ -6,8 +6,9 @@ const Sidebar = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'dashboard', fill: false },
     { name: 'Mapa de Fincas', path: '/farms', icon: 'map', fill: true },
-    { name: 'Inventario Ganadero', path: '/inventory', icon: 'pets', fill: false },
-    { name: 'Configuración', path: '/catalogs', icon: 'settings', fill: true }
+    { name: 'Padrón de Ganaderos', path: '/farmers', icon: 'groups', fill: true },
+    { name: 'Catálogos Maestros', path: '/catalogs', icon: 'settings', fill: true },
+    { name: 'Auditoría Sync', path: '/sync-logs', icon: 'sync', fill: false }
   ];
 
   return (
@@ -58,7 +59,9 @@ const Sidebar = () => {
       
       <div className="px-md mt-auto pt-md border-t border-emerald-800/40">
         <div className="flex items-center gap-md p-sm rounded-xl bg-emerald-950/40 border border-emerald-800/30">
-          <img alt="Administrator Profile" className="w-9 h-9 rounded-full object-cover border-2 border-emerald-400/50 shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_MUOVLXQGIlqpUpyCYIIchtWr7HRGiGj7afVNFm3kR55hzB_XUQAvXmrO_9ZzepcMW91bjALpNCv0C2AiO7-emGIsGASI4bTwXWUKkcV-JxfzyIn6UOk4xHc4vAaLGA4vhrylcRtI5yy6FpVyjeff2HfQfULT6MZdGRGH3idMqBVOIDX5vmR3u1EDB0n9N6xk6v8lAeSq3GCC-U2jRbO42zRho4RtUY_U7xbzoGeVM4wUKlRnw4mgw8Im_BvAxFnjyORe2rtrCXIN" />
+          <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center text-white font-bold">
+            AG
+          </div>
           <div className="overflow-hidden">
             <p className="font-label-md text-label-md text-white font-semibold truncate">Admin General</p>
             <p className="font-label-sm text-[11px] text-emerald-300/80 truncate">admin@agrostats.org</p>

@@ -447,6 +447,112 @@ CREATE TABLE IF NOT EXISTS tratamientos (
     ''', [animalId]);
   }
 
+  // =========================================================================
+  // FÓRMULAS GANADERAS E INDICADORES KPI
+  // =========================================================================
+
+  /// 1. Cálculo de Unidades de Ganado Mayor (UGM) de la finca.
+  /// Factores de conversión:
+  /// - Toro reproductor (Macho > 24 meses): 1.2 UGM
+  /// - Vaca adulta (Hembra > 24 meses): 1.0 UGM
+  /// - Novillo / Vaquilla (12 - 24 meses): 0.7 UGM
+  /// - Ternero / Ternera (< 12 meses): 0.4 UGM
+  Future<double> getUnidadesGanadoMayor(String fincaId) async {
+    final animales = await getAnimalesByFinca(fincaId);
+    if (animales.isEmpty) return 0.0;
+
+    final ahora = DateTime.now();
+    double totalUGM = 0.0;
+
+    for (final animal in animales) {
+      final fechaNac = DateTime.tryParse(animal['fecha_nacimiento'] as String? ?? '') ?? ahora;
+      final edadMeses = (ahora.difference(fechaNac).inDays / 30.44).floor();
+      final sexo = animal['sexo'] as int? ?? 1;
+
+      if (edadMeses >= 24) {
+        totalUGM += (sexo == 2) ? 1.2 : 1.0; // Toro=1.2, Vaca=1.0
+      } else if (edadMeses >= 12) {
+        totalUGM += 0.7; // Vaquilla / Novillo
+      } else {
+        totalUGM += 0.4; // Ternero / Ternera
+      }
+    }
+    return double.parse(totalUGM.toStringAsFixed(1));
+  }
+
+  /// 2. Animales actualmente en período de retiro sanitario de leche (Tiempo de Carencia).
+  /// Si (fecha_deteccion + dias_retiro_leche) >= hoy, la leche debe descartarse.
+  Future<List<Map<String, dynamic>>> getAnimalesEnRetiroLeche(String fincaId) async {
+    final db = await instance.database;
+    final ahoraStr = DateTime.now().toIso8601String().substring(0, 10);
+
+    return await db.rawQuery('''
+      SELECT DISTINCT
+        a.id AS animal_id,
+        a.identificacion,
+        e.nombre AS enfermedad_nombre,
+        m.nombre_comercial AS medicamento_nombre,
+        m.dias_retiro_leche,
+        rs.fecha_deteccion
+      FROM registros_salud rs
+      INNER JOIN animales a ON rs.animal_id = a.id
+      INNER JOIN enfermedades e ON rs.enfermedad_id = e.id
+      INNER JOIN tratamientos t ON t.registro_salud_id = rs.id
+      INNER JOIN medicamentos m ON t.medicamento_id = m.id
+      WHERE a.finca_id = ?
+        AND rs.is_deleted = 0
+        AND m.dias_retiro_leche > 0
+        AND date(rs.fecha_deteccion, '+' || m.dias_retiro_leche || ' days') >= date(?)
+      ORDER BY rs.fecha_deteccion DESC
+    ''', [fincaId, ahoraStr]);
+  }
+
+  /// 3. Resumen completo de KPIs Ganaderos y Producción (Leche, UGM, Retiro, Promedios).
+  Future<Map<String, dynamic>> getKPIsProduccion(String fincaId) async {
+    final db = await instance.database;
+    final hoy = DateTime.now();
+    final fechaStr = '${hoy.year}-${hoy.month.toString().padLeft(2, '0')}-${hoy.day.toString().padLeft(2, '0')}';
+
+    // Total litros hoy
+    final litrosHoy = await getLitrosHoy(fincaId);
+    
+    // Masa en Kg (1 L = 1.032 Kg)
+    final kgLecheHoy = double.parse((litrosHoy * 1.032).toStringAsFixed(1));
+
+    // Conteo vacas distintas ordeñadas hoy
+    final resultVacas = await db.rawQuery('''
+      SELECT COUNT(DISTINCT pl.animal_id) AS total_vacas
+      FROM produccion_leche pl
+      INNER JOIN animales a ON pl.animal_id = a.id
+      WHERE a.finca_id = ?
+        AND pl.is_deleted = 0
+        AND pl.fecha LIKE ?
+    ''', [fincaId, '$fechaStr%']);
+    
+    final vacasOrdenadasHoy = Sqflite.firstIntValue(resultVacas) ?? 0;
+    
+    // Promedio por vaca en ordeño hoy (L/vaca/día)
+    final promedioVaca = vacasOrdenadasHoy > 0 
+        ? double.parse((litrosHoy / vacasOrdenadasHoy).toStringAsFixed(1))
+        : 0.0;
+
+    // Total UGM
+    final totalUGM = await getUnidadesGanadoMayor(fincaId);
+
+    // Vacas en retiro por tratamiento médico
+    final vacasEnRetiro = await getAnimalesEnRetiroLeche(fincaId);
+
+    return {
+      'litrosHoy': litrosHoy,
+      'kgLecheHoy': kgLecheHoy,
+      'vacasOrdenadasHoy': vacasOrdenadasHoy,
+      'promedioVacaDia': promedioVaca,
+      'totalUGM': totalUGM,
+      'vacasEnRetiroCount': vacasEnRetiro.length,
+      'vacasEnRetiro': vacasEnRetiro,
+    };
+  }
+
   /// Medicamentos sugeridos para una enfermedad (basado en historial de la finca).
   /// Devuelve los medicamentos más usados para esa enfermedad en orden de frecuencia.
   Future<List<Map<String, dynamic>>> getMedicamentosSugeridos(

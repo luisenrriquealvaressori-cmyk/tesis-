@@ -68,6 +68,62 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
 
+  Future<bool> register({
+    required String nombre,
+    required String telefono,
+    required String clave,
+    required String municipioId,
+    required String comarca,
+  }) async {
+    _isLoading = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nombre': nombre,
+          'telefono': telefono,
+          'clave': clave,
+          'municipioId': municipioId,
+          'comarca': comarca,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        // Intentar iniciar sesión automáticamente con las credenciales registradas
+        return await login(telefono, clave);
+      } else {
+        final body = jsonDecode(response.body);
+        _lastError = body['error'] ?? 'Error al registrar usuario';
+      }
+    } catch (e) {
+      // Si la API no responde o se opera sin red, permitir sesión local temporal
+      await setLocalSession(nombre: nombre, telefono: telefono);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<void> setLocalSession({required String nombre, required String telefono}) async {
+    _token = 'local_token_${DateTime.now().millisecondsSinceEpoch}';
+    _usuarioId = 'user_local_${DateTime.now().millisecondsSinceEpoch}';
+    _nombre = nombre;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('agro_token', _token!);
+    await prefs.setString('agro_userid', _usuarioId!);
+    await prefs.setString('agro_nombre', _nombre!);
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     _token = null;
     _usuarioId = null;
@@ -79,3 +135,4 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+

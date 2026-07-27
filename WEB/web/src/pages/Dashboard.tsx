@@ -1,20 +1,31 @@
 import { useEffect, useState } from 'react';
-import { fetchKpis, fetchMapaFincas } from '../services/api';
+import { fetchKpis, fetchMapaFincas, fetchProduccionTendencia } from '../services/api';
 
 const Dashboard = () => {
-  const [kpis, setKpis] = useState({ totalFincas: 0, totalVacas: 0, alertasMedicas: 0 });
+  const [kpis, setKpis] = useState({
+    totalFincas: 0,
+    totalVacas: 0,
+    totalUGM: 0,
+    alertasMedicas: 0,
+    produccionHoyLitros: 0,
+    produccionHoyKg: 0,
+    promedioLitrosVaca: 0
+  });
+  const [tendencia, setTendencia] = useState<any[]>([]);
   const [fincas, setFincas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [kpiData, fincasData] = await Promise.all([
+        const [kpiData, fincasData, tendenciaData] = await Promise.all([
           fetchKpis(),
-          fetchMapaFincas()
+          fetchMapaFincas(),
+          fetchProduccionTendencia()
         ]);
         setKpis(kpiData);
         setFincas(fincasData);
+        setTendencia(tendenciaData);
       } catch (error) {
         console.error("Failed to load dashboard data", error);
       } finally {
@@ -26,130 +37,181 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-gutter">
-      {/* KPIs Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-md md:gap-gutter">
-        {/* KPI 1 */}
-        <div className="glass-card rounded-2xl p-lg shadow-sm card-hover-effect flex items-center justify-between border border-emerald-100/60 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-100/50 to-transparent rounded-bl-full pointer-events-none"></div>
+    <div className="flex flex-col gap-6">
+      {/* Banner Superior */}
+      <div className="rounded-2xl bg-gradient-to-r from-[#012d1d] via-[#0b4d34] to-[#125c40] p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 mb-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <p className="font-label-md text-label-md text-emerald-800 uppercase tracking-wider font-bold">Total Fincas Registradas</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold mb-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Plataforma Institucional de Monitoreo Ganadero
             </div>
-            <h3 className="font-headline-xl text-headline-xl text-primary font-black tracking-tight">
-              {loading ? '...' : kpis.totalFincas}
-            </h3>
-            <p className="text-xs text-emerald-600 font-medium mt-1">Sincronizado con Neon DB</p>
+            <h2 className="text-3xl font-extrabold tracking-tight">Centro de Control de Hato & Bioseguridad</h2>
+            <p className="text-emerald-100/80 text-sm mt-1">Supervisión en tiempo real de producción láctea, censo bovino y retiros sanitarios.</p>
           </div>
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-emerald-700/20 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined icon-fill" style={{ fontSize: '30px' }}>landscape</span>
-          </div>
-        </div>
-
-        {/* KPI 2 */}
-        <div className="glass-card rounded-2xl p-lg shadow-sm card-hover-effect flex items-center justify-between border border-teal-100/60 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-100/50 to-transparent rounded-bl-full pointer-events-none"></div>
-          <div>
-            <div className="flex items-center gap-2 mb-sm">
-              <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-              <p className="font-label-md text-label-md text-teal-800 uppercase tracking-wider font-bold">Total Ganado Monitoreado</p>
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-950/60 border border-emerald-700/50 px-4 py-2 rounded-xl text-center">
+              <p className="text-[11px] text-emerald-300 uppercase font-bold tracking-wider">Densidad Leche</p>
+              <p className="text-lg font-black text-white">1.032 kg/L</p>
             </div>
-            <h3 className="font-headline-xl text-headline-xl text-primary font-black tracking-tight">
-              {loading ? '...' : kpis.totalVacas}
-            </h3>
-            <p className="text-xs text-teal-600 font-medium mt-1">Censo Bovino Activo</p>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-800 flex items-center justify-center text-white shadow-lg shadow-teal-700/20 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined icon-fill" style={{ fontSize: '30px' }}>pets</span>
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="glass-card rounded-2xl p-lg shadow-sm card-hover-effect flex items-center justify-between border border-amber-200/60 relative overflow-hidden group">
-          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-500 to-rose-600"></div>
-          <div className="pl-2">
-            <div className="flex items-center gap-2 mb-sm">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              <p className="font-label-md text-label-md text-amber-900 uppercase tracking-wider font-bold">Alertas Médicas (72h)</p>
-            </div>
-            <h3 className="font-headline-xl text-headline-xl text-rose-600 font-black tracking-tight">
-              {loading ? '...' : kpis.alertasMedicas}
-            </h3>
-            <p className="text-xs text-rose-600/80 font-medium mt-1">Casos clínicos recientes</p>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-600/20 group-hover:scale-110 transition-transform">
-            <span className="material-symbols-outlined icon-fill" style={{ fontSize: '30px' }}>warning</span>
           </div>
         </div>
       </div>
 
-      {/* Map Section */}
-      <div className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm min-h-[500px] flex flex-col relative overflow-hidden">
-        <div className="px-md py-sm border-b border-outline-variant bg-surface-bright flex justify-between items-center z-10">
-          <h3 className="font-title-md text-title-md text-primary">Mapa Interactivo - Visión Estratégica</h3>
-          <div className="flex gap-sm">
-            <button className="px-sm py-xs bg-secondary text-on-secondary rounded font-label-md text-label-md shadow-sm">Satélite</button>
-            <button className="px-sm py-xs bg-surface text-primary border border-outline-variant rounded font-label-md text-label-md hover:bg-surface-container-low transition-colors">Relieve</button>
+      {/* Grid de Métricas KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Fincas */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100 flex items-center justify-between hover:shadow-md transition-all">
+          <div>
+            <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">Total Fincas</p>
+            <h3 className="text-2xl font-black text-slate-900">{loading ? '...' : kpis.totalFincas}</h3>
+            <p className="text-xs text-slate-500 font-medium mt-1">Propiedades registradas</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">landscape</span>
           </div>
         </div>
 
-        {/* Map Container */}
-        <div className="flex-1 relative bg-[#e5e5e5] flex items-center justify-center overflow-hidden">
-          <img 
-            className="absolute inset-0 w-full h-full object-cover opacity-80" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNu0mGMxtfsBnxLK0LuppFMV22uwEE64uP0PHhEkgzGDNHR9cqHNT08dt9FmB0qUEZuVIbgyYFfF-a5wvwPEfTFOrv6mBmVx8InYL294zx6ngkTL_VM9prhpNnZVvqwta3mHHoP725DcoYt9h4gloljZOzMc5QH89m26OR7x25favD3oh5jBxMiAKjVJb94JlmmRcazUL8bLnf0G8xwxdqhhpFyUkOlQ_MTJc4sryZlp_PL7kzXjezaCh8WkIqx8OBvImI6hnfx9Ht" 
-            alt="Map Background"
-          />
-          
-          <div className="absolute right-4 bottom-4 flex flex-col gap-2 bg-surface-container-lowest p-2 border border-outline-variant rounded shadow-md z-10">
-            <button className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low rounded">
-              <span className="material-symbols-outlined">add</span>
-            </button>
-            <hr className="border-outline-variant border-t" />
-            <button className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low rounded">
-              <span className="material-symbols-outlined">remove</span>
-            </button>
+        {/* KPI 2: Ganado & UGM */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-teal-100 flex items-center justify-between hover:shadow-md transition-all">
+          <div>
+            <p className="text-xs font-bold text-teal-800 uppercase tracking-wider mb-1">Ganado / UGM</p>
+            <h3 className="text-2xl font-black text-slate-900">{loading ? '...' : `${kpis.totalVacas} cab`}</h3>
+            <p className="text-xs text-teal-700 font-semibold mt-1">{loading ? '...' : `${kpis.totalUGM} UGM Totales`}</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">pets</span>
+          </div>
+        </div>
+
+        {/* KPI 3: Producción Hoy */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100 flex items-center justify-between hover:shadow-md transition-all">
+          <div>
+            <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Producción Hoy</p>
+            <h3 className="text-2xl font-black text-blue-900">{loading ? '...' : `${kpis.produccionHoyLitros} L`}</h3>
+            <p className="text-xs text-blue-700 font-semibold mt-1">{loading ? '...' : `${kpis.produccionHoyKg} kg`}</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">water_drop</span>
+          </div>
+        </div>
+
+        {/* KPI 4: Alertas Médicas */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-rose-100 flex items-center justify-between hover:shadow-md transition-all">
+          <div>
+            <p className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-1">Alertas Sanitarias</p>
+            <h3 className="text-2xl font-black text-rose-600">{loading ? '...' : kpis.alertasMedicas}</h3>
+            <p className="text-xs text-rose-600 font-medium mt-1">Casos clínicos activos (72h)</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">warning</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tendencias de Producción y Mapa Interactivo */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gráfico / Tabla de Tendencia */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">show_chart</span>
+                Tendencia Semanal de Producción
+              </h3>
+              <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">Últimos 7 días</span>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">Volumen diario consolidado de leche entregada por las fincas.</p>
+
+            <div className="space-y-3">
+              {tendencia.length === 0 ? (
+                <p className="text-sm text-slate-400 italic">No hay datos suficientes de ordeño esta semana.</p>
+              ) : (
+                tendencia.map((item, idx) => {
+                  const maxVal = Math.max(...tendencia.map(t => t.litros), 10);
+                  const percentage = Math.min(100, Math.round((item.litros / maxVal) * 100));
+
+                  return (
+                    <div key={idx} className="flex items-center gap-3 text-xs">
+                      <span className="w-12 text-slate-600 font-bold">{item.fecha}</span>
+                      <div className="flex-1 bg-slate-100 h-4 rounded-full overflow-hidden flex">
+                        <div 
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" 
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="w-20 text-right font-black text-slate-800">{item.litros} L ({item.kg} kg)</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
 
-          {/* Marcadores Dinámicos */}
-          {fincas.map((finca, index) => {
-            // Posicionamiento simulado aleatorio para demo, idealmente usaríamos las lat/lng reales
-            // con un componente de mapa como Leaflet o Google Maps
-            const top = 20 + (index * 15) % 60;
-            const left = 20 + (index * 25) % 60;
-            const isAlert = finca.tieneAlertasSanitarias;
+          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600">
+            <span>Promedio por Vaca:</span>
+            <span className="text-emerald-700 font-bold text-sm">{kpis.promedioLitrosVaca} L/vaca/día</span>
+          </div>
+        </div>
 
-            return (
-              <div key={finca.id} style={{ top: `${top}%`, left: `${left}%` }} className="absolute z-10 group">
-                {/* Pin */}
-                <div className={`w-4 h-4 rounded-full border-2 border-surface-container-lowest shadow-sm cursor-pointer transition-transform group-hover:scale-125 ${isAlert ? 'bg-error animate-pulse' : 'bg-secondary'}`}></div>
-                
-                {/* Tooltip Dinámico */}
-                <div className="hidden group-hover:block absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-lg z-20 w-64">
-                  <div className="flex justify-between items-start mb-sm">
-                    <h4 className="font-title-md text-title-md text-primary">{finca.nombre}</h4>
-                  </div>
-                  <div className="flex flex-col gap-xs mb-sm">
-                    <div className="flex items-center gap-xs text-on-surface-variant font-body-md text-body-md">
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>pets</span>
-                      <span>{finca.totalGanado} vacas</span>
-                    </div>
-                    {isAlert && (
-                      <div className="flex items-center gap-xs text-error font-body-md text-body-md">
-                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>warning</span>
-                        <span>Última alerta: {finca.ultimaAlerta || 'Desconocida'}</span>
-                      </div>
-                    )}
-                  </div>
-                  <button className="w-full py-xs border border-secondary text-secondary rounded font-label-md text-label-md hover:bg-secondary hover:text-on-secondary transition-colors">
-                    Ver Detalles
-                  </button>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-surface-container-lowest border-b border-r border-outline-variant transform rotate-45"></div>
-                </div>
-              </div>
-            );
-          })}
+        {/* Vista Visual de Fincas y Ubicaciones */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <span className="material-symbols-outlined text-teal-600">map</span>
+              Resumen Geográfico de Fincas & Hato
+            </h3>
+            <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">{fincas.length} fincas activas</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="py-2.5 px-3">Finca</th>
+                  <th className="py-2.5 px-3">Ganadero</th>
+                  <th className="py-2.5 px-3">Municipio / Comarca</th>
+                  <th className="py-2.5 px-3 text-center">Ganado / UGM</th>
+                  <th className="py-2.5 px-3 text-center">Estado Sanitario</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {fincas.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-slate-400 italic">No hay fincas registradas aún.</td>
+                  </tr>
+                ) : (
+                  fincas.map((finca) => (
+                    <tr key={finca.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-emerald-600 text-base">domain</span>
+                        {finca.nombre}
+                      </td>
+                      <td className="py-3 px-3 text-slate-700 font-medium">{finca.ganaderoNombre}</td>
+                      <td className="py-3 px-3 text-slate-600">{finca.municipio} {finca.comarca ? `• ${finca.comarca}` : ''}</td>
+                      <td className="py-3 px-3 text-center font-bold text-slate-800">
+                        {finca.totalGanado} cab ({finca.totalUGM} UGM)
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        {finca.tieneAlertasSanitarias ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-bold text-[10px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                            {finca.ultimaAlerta || 'Alerta Sanitaria'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Sin novedades
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

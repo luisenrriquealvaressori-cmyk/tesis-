@@ -16,7 +16,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String _fincaNombre = 'Cargando...';
   int _totalAnimales = 0;
+  
+  // Métricas KPI Ganaderas
   double _litrosHoy = 0.0;
+  double _kgLecheHoy = 0.0;
+  int _vacasOrdenadasHoy = 0;
+  double _promedioVacaDia = 0.0;
+  double _totalUGM = 0.0;
+  int _vacasEnRetiroCount = 0;
+  List<Map<String, dynamic>> _vacasEnRetiro = [];
+
   List<Map<String, dynamic>> _ultimosRegistros = [];
 
   @override
@@ -30,14 +39,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (finca != null) {
       final fincaId = finca['id'] as String;
       final totalAnimales = await LocalDatabase.instance.getTotalAnimales(fincaId);
-      final litrosHoy = await LocalDatabase.instance.getLitrosHoy(fincaId);
+      final kpis = await LocalDatabase.instance.getKPIsProduccion(fincaId);
       final ultimosRegistros = await LocalDatabase.instance.getUltimosRegistrosSalud(fincaId);
       
       if (mounted) {
         setState(() {
           _fincaNombre = finca['nombre'] as String;
           _totalAnimales = totalAnimales;
-          _litrosHoy = litrosHoy;
+          _litrosHoy = (kpis['litrosHoy'] as num).toDouble();
+          _kgLecheHoy = (kpis['kgLecheHoy'] as num).toDouble();
+          _vacasOrdenadasHoy = kpis['vacasOrdenadasHoy'] as int;
+          _promedioVacaDia = (kpis['promedioVacaDia'] as num).toDouble();
+          _totalUGM = (kpis['totalUGM'] as num).toDouble();
+          _vacasEnRetiroCount = kpis['vacasEnRetiroCount'] as int;
+          _vacasEnRetiro = List<Map<String, dynamic>>.from(kpis['vacasEnRetiro']);
           _ultimosRegistros = ultimosRegistros;
           _isLoading = false;
         });
@@ -77,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1B4332).withOpacity(0.25),
+                      color: const Color(0xFF1B4332).withValues(alpha: 0.25),
                       blurRadius: 15,
                       offset: const Offset(0, 6),
                     ),
@@ -90,13 +105,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Panel de Control',
+                          'Panel de Control KPI',
                           style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.5),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Row(
@@ -128,82 +143,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Alerta Sanitaria de Retiro de Leche (si hay vacas en tratamiento)
+              if (_vacasEnRetiroCount > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.amber.shade400, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 32),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '⚠️ Alerta de Retiro Sanitario: $_vacasEnRetiroCount vaca(s)',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade900, fontSize: 14),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Leche bajo tratamiento médico. No apta para consumo ni venta comercial.',
+                              style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               
-              // Metrics Cards Row
+              // Metrics Cards Grid (4 tarjetas KPI)
               Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-                        ],
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [Color(0xFF2C694E), Color(0xFF40916C)]),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(Icons.pets, color: Colors.white, size: 26),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('VACAS ACTIVAS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                                const SizedBox(height: 2),
-                                Text('$_totalAnimales', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.extrabold, color: Color(0xFF0F172A))),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _buildMetricCard(
+                      title: 'HATO / UGM',
+                      value: '$_totalAnimales cab',
+                      subtext: '$_totalUGM UGM',
+                      icon: Icons.pets,
+                      colors: [const Color(0xFF2C694E), const Color(0xFF40916C)],
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-                        ],
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [Color(0xFF0284C7), Color(0xFF38BDF8)]),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(Icons.water_drop, color: Colors.white, size: 26),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('LECHE HOY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                                const SizedBox(height: 2),
-                                Text('$_litrosHoy L', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.extrabold, color: Color(0xFF0F172A))),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: _buildMetricCard(
+                      title: 'LECHE HOY',
+                      value: '$_litrosHoy L',
+                      subtext: '$_kgLecheHoy kg',
+                      icon: Icons.water_drop,
+                      colors: [const Color(0xFF0284C7), const Color(0xFF38BDF8)],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMetricCard(
+                      title: 'PROMEDIO / VACA',
+                      value: '$_promedioVacaDia L/día',
+                      subtext: '$_vacasOrdenadasHoy vacas en ordeño',
+                      icon: Icons.speed,
+                      colors: [const Color(0xFFD97706), const Color(0xFFF59E0B)],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildMetricCard(
+                      title: 'RETIRO LECHE',
+                      value: '$_vacasEnRetiroCount vacas',
+                      subtext: _vacasEnRetiroCount > 0 ? 'Leche de descarte' : 'Hato 100% sano',
+                      icon: Icons.sanitizer,
+                      colors: _vacasEnRetiroCount > 0 
+                          ? [Colors.red.shade700, Colors.red.shade400]
+                          : [Colors.teal.shade700, Colors.teal.shade400],
                     ),
                   ),
                 ],
@@ -233,7 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: Theme.of(context).colorScheme.primary,
                     onTap: () async {
                       await context.push('/register_animal');
-                      _loadDashboardData(); // Refresh on return
+                      _loadDashboardData();
                     },
                   ),
                   _buildActionCard(
@@ -260,48 +282,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   _buildActionCard(
                     context, 
-                    title: 'Mi\nGanado', 
-                    icon: Icons.list_alt, 
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    iconColor: Theme.of(context).colorScheme.onSecondaryContainer,
-                    onTap: () => context.go('/ganado'),
+                    title: 'Sincronizar\nDatos', 
+                    icon: Icons.sync, 
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    onTap: () async {
+                      await context.push('/sync');
+                      _loadDashboardData();
+                    },
                   ),
                 ],
               ),
-              
-              if (_ultimosRegistros.isNotEmpty) ...[
-                const SizedBox(height: 32),
-                Text('Últimos Eventos de Salud', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 16),
-                ListView.separated(
+
+              const SizedBox(height: 28),
+
+              // Registros de salud recientes
+              Text('Últimos Eventos de Salud', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              if (_ultimosRegistros.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Text('No hay eventos de salud recientes registrados.', style: TextStyle(color: Colors.grey)),
+                )
+              else
+                ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _ultimosRegistros.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final reg = _ultimosRegistros[index];
-                    final obligatoria = (reg['notificacion_obligatoria'] as int) == 1;
                     return Card(
-                      color: obligatoria ? Colors.red.shade50 : Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: obligatoria ? Colors.red.shade200 : Theme.of(context).colorScheme.outlineVariant),
-                      ),
+                      margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: obligatoria ? Colors.red : Theme.of(context).colorScheme.primary,
-                          child: const Icon(Icons.health_and_safety, color: Colors.white, size: 20),
+                        leading: const CircleAvatar(
+                          backgroundColor: Colors.redAccent,
+                          child: Icon(Icons.local_hospital, color: Colors.white, size: 20),
                         ),
-                        title: Text('${reg['animal_id']} - ${reg['enfermedad_nombre']}'),
-                        subtitle: Text(reg['fecha_deteccion'] as String),
-                        trailing: obligatoria ? const Icon(Icons.warning, color: Colors.red) : null,
+                        title: Text('Animal: ${reg['animal_id']} - ${reg['enfermedad_nombre']}'),
+                        subtitle: Text('Fecha: ${reg['fecha_deteccion'].toString().substring(0, 10)}'),
                       ),
                     );
                   },
                 ),
-              ],
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -309,39 +337,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          if (index == 1) context.go('/ganado');
-          if (index == 2) context.go('/health_record');
+          if (index == 1) context.push('/ganado');
+          if (index == 2) context.push('/sync');
         },
       ),
     );
   }
 
-  Widget _buildActionCard(BuildContext context, {required String title, required IconData icon, required Color color, Color? iconColor, required VoidCallback onTap}) {
+  Widget _buildMetricCard({
+    required String title,
+    required String value,
+    required String subtext,
+    required IconData icon,
+    required List<Color> colors,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: colors),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                Text(subtext, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    Color? iconColor,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3)),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor ?? Colors.white),
+            CircleAvatar(
+              backgroundColor: color,
+              radius: 26,
+              child: Icon(icon, color: iconColor ?? Colors.white, size: 28),
             ),
             const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelLarge,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, height: 1.2),
             ),
           ],
         ),
