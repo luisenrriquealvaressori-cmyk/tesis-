@@ -551,25 +551,28 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                 ),
               ),
             ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          border: Border(
-              top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
-        ),
-        child: ElevatedButton.icon(
-          onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveOnboardingAndFarm,
-          icon: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : const Icon(Icons.check_circle),
-          label: Text(_isSaving ? 'Guardando...' : 'Completar y Entrar'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 56),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+                top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+          ),
+          child: ElevatedButton.icon(
+            onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveOnboardingAndFarm,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.check_circle),
+            label: Text(_isSaving ? 'Guardando...' : 'Completar y Entrar'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 56),
+            ),
           ),
         ),
       ),

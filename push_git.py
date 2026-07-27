@@ -12,7 +12,7 @@ res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print(res1.stdout, res1.stderr)
 
 commit_msg = (
-    "fix: eliminar restricción NOT NULL en sintomas.enfermedad_id y usar UPSERT sin borrado en SQLite para resolver fallo de carga de catálogos y municipios"
+    "fix: añadir flutter_localizations y delegados para solucionar error en DatePickerDialog y envolver botones inferiores en SafeArea para evitar solapamiento en Android"
 )
 
 print("[3/4] Creando commit en Git...")

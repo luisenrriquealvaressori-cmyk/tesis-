@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'theme/theme.dart';
 import 'screens/splash_screen.dart';
@@ -83,6 +84,17 @@ class AgroUxApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      locale: const Locale('es', 'ES'),
+      supportedLocales: const [
+        Locale('es', 'ES'),
+        Locale('es', 'NI'),
+        Locale('en', 'US'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }

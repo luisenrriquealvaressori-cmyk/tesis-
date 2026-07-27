@@ -377,21 +377,23 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
                   ],
                 ),
               ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: ElevatedButton.icon(
+            onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveAnimal,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.save),
+            label: Text(_isSaving ? 'Guardando...' : 'Guardar Animal'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 56),
             ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton.icon(
-          onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveAnimal,
-          icon: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : const Icon(Icons.save),
-          label: Text(_isSaving ? 'Guardando...' : 'Guardar Animal'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 56),
           ),
         ),
       ),
