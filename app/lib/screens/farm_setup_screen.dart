@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../data/local_database.dart';
+import '../data/catalog_seeder.dart';
 import '../providers/auth_provider.dart';
 import '../utils/id_generator.dart';
 import '../widgets/custom_app_bar.dart';

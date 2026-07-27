@@ -22,7 +22,7 @@ class IdGenerator {
   /// Genera el UUID de namespace del usuario.
   /// Sirve como raíz para todos los IDs de entidades de ese usuario.
   static String _userNamespace(String usuarioId) {
-    return _uuid.v5(Uuid.NAMESPACE_URL, '$_appNamespace:user:$usuarioId');
+    return _uuid.v5(Namespace.url.value, '$_appNamespace:user:$usuarioId');
   }
 
   /// Genera un UUID v5 determinístico para cualquier entidad.

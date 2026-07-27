@@ -151,7 +151,6 @@ namespace API.Controllers
             try
             {
                 // PRE-FETCH FINCAS
-                var fincasIds = request.FincasNuevas.Select(f => f.Id).ToList();
                 var existingFincas = await _context.Fincas.Where(f => fincasIds.Contains(f.Id)).ToDictionaryAsync(f => f.Id);
 
                 foreach (var fDto in request.FincasNuevas)
