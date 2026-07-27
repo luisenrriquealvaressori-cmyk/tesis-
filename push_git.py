@@ -12,7 +12,7 @@ res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print(res1.stdout, res1.stderr)
 
 commit_msg = (
-    "fix: añadir flutter_localizations y delegados para solucionar error en DatePickerDialog y envolver botones inferiores en SafeArea para evitar solapamiento en Android"
+    "fix: corregir paréntesis faltante en animal_registration_screen y configurar localizaciones en main"
 )
 
 print("[3/4] Creando commit en Git...")

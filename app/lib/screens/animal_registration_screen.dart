@@ -377,6 +377,7 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
                   ],
                 ),
               ),
+            ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.only(bottom: 16),
         child: Padding(
