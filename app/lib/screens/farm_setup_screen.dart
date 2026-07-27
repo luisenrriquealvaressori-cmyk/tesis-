@@ -31,10 +31,10 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
   List<Map<String, dynamic>> _municipios = [];
   List<Map<String, dynamic>> _comarcas = [];
 
-  // Selecciones actuales
-  Map<String, dynamic>? _selectedDepartamento;
-  Map<String, dynamic>? _selectedMunicipio;
-  Map<String, dynamic>? _selectedComarca;
+  // Selecciones actuales (IDs en String)
+  String? _selectedDepartamentoId;
+  String? _selectedMunicipioId;
+  String? _selectedComarcaId;
 
   bool _isGettingLocation = false;
   bool _isSaving = false;
@@ -79,30 +79,30 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
     });
   }
 
-  Future<void> _onDepartamentoSelected(Map<String, dynamic>? depto) async {
+  Future<void> _onDepartamentoSelected(String? deptoId) async {
     setState(() {
-      _selectedDepartamento = depto;
-      _selectedMunicipio = null;
-      _selectedComarca = null;
+      _selectedDepartamentoId = deptoId;
+      _selectedMunicipioId = null;
+      _selectedComarcaId = null;
       _municipios = [];
       _comarcas = [];
     });
-    if (depto != null) {
+    if (deptoId != null) {
       final munis = await LocalDatabase.instance
-          .getMunicipiosByDepartamento(depto['id'] as String);
+          .getMunicipiosByDepartamento(deptoId);
       setState(() => _municipios = munis);
     }
   }
 
-  Future<void> _onMunicipioSelected(Map<String, dynamic>? muni) async {
+  Future<void> _onMunicipioSelected(String? muniId) async {
     setState(() {
-      _selectedMunicipio = muni;
-      _selectedComarca = null;
+      _selectedMunicipioId = muniId;
+      _selectedComarcaId = null;
       _comarcas = [];
     });
-    if (muni != null) {
+    if (muniId != null) {
       final coms = await LocalDatabase.instance
-          .getComarcasByMunicipio(muni['id'] as String);
+          .getComarcasByMunicipio(muniId);
       setState(() => _comarcas = coms);
     }
   }
@@ -141,7 +141,7 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
 
   Future<void> _saveOnboardingAndFarm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedMunicipio == null) {
+    if (_selectedMunicipioId == null) {
       AppNotificationService.warning(context,
         'Municipio requerido',
         subtitle: 'Selecciona el municipio de tu finca para continuar',
@@ -152,8 +152,15 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
     setState(() => _isSaving = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final comarcaText = _selectedComarca?['nombre'] as String? ?? _comarcaController.text.trim();
-      final municipioId = _selectedMunicipio!['id'] as String;
+      Map<String, dynamic>? selectedComarca;
+      for (final c in _comarcas) {
+        if (c['id'] == _selectedComarcaId) {
+          selectedComarca = c;
+          break;
+        }
+      }
+      final comarcaText = selectedComarca?['nombre'] as String? ?? _comarcaController.text.trim();
+      final municipioId = _selectedMunicipioId!;
 
       // 1. Si no estaba autenticado, registrar usuario
       if (!authProvider.isAuthenticated) {
@@ -310,10 +317,10 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           // Departamento
                           _buildLabel('Departamento *'),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<Map<String, dynamic>>(
-                            key: ValueKey('depto_${_selectedDepartamento?['id'] ?? 'none'}'),
+                          DropdownButtonFormField<String>(
+                            key: ValueKey('depto_select_$_selectedDepartamentoId'),
                             isExpanded: true,
-                            initialValue: _selectedDepartamento,
+                            value: _selectedDepartamentoId,
                             hint: const Text(
                               'Selecciona departamento',
                               overflow: TextOverflow.ellipsis,
@@ -322,8 +329,8 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                               prefixIcon: Icon(Icons.map),
                             ),
                             items: _departamentos
-                                .map((d) => DropdownMenuItem(
-                                      value: d,
+                                .map((d) => DropdownMenuItem<String>(
+                                      value: d['id'] as String,
                                       child: Text(
                                         d['nombre'] as String,
                                         overflow: TextOverflow.ellipsis,
@@ -338,12 +345,12 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           // Municipio
                           _buildLabel('Municipio *'),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<Map<String, dynamic>>(
-                            key: ValueKey('muni_${_selectedMunicipio?['id'] ?? 'none'}'),
+                          DropdownButtonFormField<String>(
+                            key: ValueKey('muni_select_$_selectedMunicipioId'),
                             isExpanded: true,
-                            initialValue: _selectedMunicipio,
+                            value: _selectedMunicipioId,
                             hint: Text(
-                              _selectedDepartamento == null
+                              _selectedDepartamentoId == null
                                   ? 'Selecciona departamento primero'
                                   : 'Selecciona un municipio',
                               overflow: TextOverflow.ellipsis,
@@ -352,15 +359,15 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                               prefixIcon: Icon(Icons.location_city),
                             ),
                             items: _municipios
-                                .map((m) => DropdownMenuItem(
-                                      value: m,
+                                .map((m) => DropdownMenuItem<String>(
+                                      value: m['id'] as String,
                                       child: Text(
                                         m['nombre'] as String,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ))
                                 .toList(),
-                            onChanged: _selectedDepartamento == null
+                            onChanged: _selectedDepartamentoId == null
                                 ? null
                                 : _onMunicipioSelected,
                             validator: (v) => v == null ? 'Selecciona un municipio' : null,
@@ -371,10 +378,10 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                           _buildLabel('Comarca *'),
                           const SizedBox(height: 8),
                           if (_comarcas.isNotEmpty) ...[
-                            DropdownButtonFormField<Map<String, dynamic>>(
-                              key: ValueKey('comarca_${_selectedComarca?['id'] ?? 'none'}'),
+                            DropdownButtonFormField<String>(
+                              key: ValueKey('comarca_select_$_selectedComarcaId'),
                               isExpanded: true,
-                              initialValue: _selectedComarca,
+                              value: _selectedComarcaId,
                               hint: const Text(
                                 'Selecciona una comarca',
                                 overflow: TextOverflow.ellipsis,
@@ -383,15 +390,15 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                                 prefixIcon: Icon(Icons.place),
                               ),
                               items: _comarcas
-                                  .map((c) => DropdownMenuItem(
-                                        value: c,
+                                  .map((c) => DropdownMenuItem<String>(
+                                        value: c['id'] as String,
                                         child: Text(
                                           c['nombre'] as String,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ))
                                   .toList(),
-                              onChanged: (v) => setState(() => _selectedComarca = v),
+                              onChanged: (v) => setState(() => _selectedComarcaId = v),
                             ),
                           ] else ...[
                             TextFormField(

@@ -12,7 +12,7 @@ res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print(res1.stdout, res1.stderr)
 
 commit_msg = (
-    "fix: eliminar variable fincasIds duplicada en SyncController.cs para corregir error CS0136 en Render"
+    "fix: usar identificadores de texto (String IDs) en los DropdownButtonFormField de farm_setup_screen para evitar fallo de igualdad de Mapas"
 )
 
 print("[3/4] Creando commit en Git...")
