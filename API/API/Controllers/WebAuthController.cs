@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using API.Data;
 using API.Models;
+using API.DTOs;
 using BCrypt.Net;
 
 namespace API.Controllers
