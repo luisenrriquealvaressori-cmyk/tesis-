@@ -1,0 +1,512 @@
+{
+  "API/API.slnx": {
+    "mtime": 1783463700.1135046,
+    "ast_hash": "0455e10698d55a40a9f8f8adab75ec53",
+    "semantic_hash": "0455e10698d55a40a9f8f8adab75ec53"
+  },
+  "API/API/API.csproj": {
+    "mtime": 1784840945.4844396,
+    "ast_hash": "ad0ac6d7bbb129cdacede9d82b2e1d67",
+    "semantic_hash": "ad0ac6d7bbb129cdacede9d82b2e1d67"
+  },
+  "API/API/Controllers/AuthController.cs": {
+    "mtime": 1784841989.4387658,
+    "ast_hash": "2cb235ad6bacadd5a401c866f19effbf",
+    "semantic_hash": "2cb235ad6bacadd5a401c866f19effbf"
+  },
+  "API/API/Controllers/CatalogosController.cs": {
+    "mtime": 1785112031.358133,
+    "ast_hash": "d5131f6ce1f80f35e4b34cf478814991",
+    "semantic_hash": "d5131f6ce1f80f35e4b34cf478814991"
+  },
+  "API/API/Controllers/DashboardController.cs": {
+    "mtime": 1785112016.7871878,
+    "ast_hash": "43e7fa15f7c0372c1311de5b269adc49",
+    "semantic_hash": "43e7fa15f7c0372c1311de5b269adc49"
+  },
+  "API/API/Controllers/ImagesController.cs": {
+    "mtime": 1783466280.09454,
+    "ast_hash": "f34704a98e82b96e416c1a5aaa5e0c27",
+    "semantic_hash": "f34704a98e82b96e416c1a5aaa5e0c27"
+  },
+  "API/API/Controllers/MigrationController.cs": {
+    "mtime": 1784842248.455401,
+    "ast_hash": "0710c4e213dfcd73575770ef30c817db",
+    "semantic_hash": "0710c4e213dfcd73575770ef30c817db"
+  },
+  "API/API/Controllers/SyncController.cs": {
+    "mtime": 1784842239.2619345,
+    "ast_hash": "2518d4a7968d062b39b6102d81bca3bc",
+    "semantic_hash": "2518d4a7968d062b39b6102d81bca3bc"
+  },
+  "API/API/Controllers/WeatherForecastController.cs": {
+    "mtime": 1783463699.867325,
+    "ast_hash": "164f542cb8eb9d08323c219f74112441",
+    "semantic_hash": "164f542cb8eb9d08323c219f74112441"
+  },
+  "API/API/Controllers/WebAuthController.cs": {
+    "mtime": 1785112412.6224792,
+    "ast_hash": "9c1211c2408e266a8dfd17dfa2dab50f",
+    "semantic_hash": "9c1211c2408e266a8dfd17dfa2dab50f"
+  },
+  "API/API/DTOs/SyncDTOs.cs": {
+    "mtime": 1783894990.2187912,
+    "ast_hash": "c21fe8479e0a1ee208019076c782c837",
+    "semantic_hash": "c21fe8479e0a1ee208019076c782c837"
+  },
+  "API/API/DTOs/WebDTOs.cs": {
+    "mtime": 1785112010.8661418,
+    "ast_hash": "8e5504b7b0f8023f74e94e12100aaa96",
+    "semantic_hash": "8e5504b7b0f8023f74e94e12100aaa96"
+  },
+  "API/API/Data/AgroDbContext.cs": {
+    "mtime": 1784842678.3236973,
+    "ast_hash": "7259327c50751a0bb957e2b980d953aa",
+    "semantic_hash": "7259327c50751a0bb957e2b980d953aa"
+  },
+  "API/API/Migrations/20260712045834_InitialCatalogsUpdate.Designer.cs": {
+    "mtime": 1783832314.9864314,
+    "ast_hash": "d2ce7f37213b4e0d4a7aa7924d1ea53f",
+    "semantic_hash": "d2ce7f37213b4e0d4a7aa7924d1ea53f"
+  },
+  "API/API/Migrations/20260712045834_InitialCatalogsUpdate.cs": {
+    "mtime": 1783832314.9864314,
+    "ast_hash": "88913e1d2ab284f773b307f57779c2d8",
+    "semantic_hash": "88913e1d2ab284f773b307f57779c2d8"
+  },
+  "API/API/Migrations/20260712222742_AddAnimalEstado.Designer.cs": {
+    "mtime": 1783895262.9751954,
+    "ast_hash": "549312eb06d752952419750521a2f7e5",
+    "semantic_hash": "549312eb06d752952419750521a2f7e5"
+  },
+  "API/API/Migrations/20260712222742_AddAnimalEstado.cs": {
+    "mtime": 1783895262.9732814,
+    "ast_hash": "4b47c374dfe1c3c5e8eaf84cf6edbb90",
+    "semantic_hash": "4b47c374dfe1c3c5e8eaf84cf6edbb90"
+  },
+  "API/API/Migrations/20260723211500_AddRolToUsuarioApp.cs": {
+    "mtime": 1784842268.752747,
+    "ast_hash": "66604bd56946bb4ce4eb0a8aa202dadc",
+    "semantic_hash": "66604bd56946bb4ce4eb0a8aa202dadc"
+  },
+  "API/API/Migrations/20260723212500_AddUsuarioWebTable.cs": {
+    "mtime": 1784842710.7474167,
+    "ast_hash": "55d99051a5f651fd38eaf1432c00f6d6",
+    "semantic_hash": "55d99051a5f651fd38eaf1432c00f6d6"
+  },
+  "API/API/Migrations/AgroDbContextModelSnapshot.cs": {
+    "mtime": 1784842742.2160048,
+    "ast_hash": "9d866813d2c8ff8648b755cf1fcc774e",
+    "semantic_hash": "9d866813d2c8ff8648b755cf1fcc774e"
+  },
+  "API/API/Models/Catalogos.cs": {
+    "mtime": 1784842661.8599002,
+    "ast_hash": "d03a1bd253a29e0888fe3426d5d56079",
+    "semantic_hash": "d03a1bd253a29e0888fe3426d5d56079"
+  },
+  "API/API/Models/Operativos.cs": {
+    "mtime": 1784842223.8881116,
+    "ast_hash": "78cb36b2f1d6b344c9dbd136b21efc92",
+    "semantic_hash": "78cb36b2f1d6b344c9dbd136b21efc92"
+  },
+  "API/API/Program.cs": {
+    "mtime": 1784841124.814321,
+    "ast_hash": "bc73b2d53965598a90a03d9101bc0cef",
+    "semantic_hash": "bc73b2d53965598a90a03d9101bc0cef"
+  },
+  "API/API/Properties/launchSettings.json": {
+    "mtime": 1783463699.2203312,
+    "ast_hash": "c47e2fa1232c6a73a246b43c98997695",
+    "semantic_hash": "c47e2fa1232c6a73a246b43c98997695"
+  },
+  "API/API/WeatherForecast.cs": {
+    "mtime": 1783463699.8855877,
+    "ast_hash": "2db89b20df6565a103ed31a0d28ed615",
+    "semantic_hash": "2db89b20df6565a103ed31a0d28ed615"
+  },
+  "API/API/appsettings.Development.json": {
+    "mtime": 1783463699.221471,
+    "ast_hash": "804b473502a4c415cf75db61c56c32aa",
+    "semantic_hash": "804b473502a4c415cf75db61c56c32aa"
+  },
+  "API/API/appsettings.json": {
+    "mtime": 1784753035.219462,
+    "ast_hash": "bec464517e1896e95f019404bdbc519c",
+    "semantic_hash": "bec464517e1896e95f019404bdbc519c"
+  },
+  "WEB/WEB.slnx": {
+    "mtime": 1783463659.1009896,
+    "ast_hash": "11f4440ac944136f7bbef4adf379620c",
+    "semantic_hash": "11f4440ac944136f7bbef4adf379620c"
+  },
+  "WEB/web/.oxlintrc.json": {
+    "mtime": 1783463621.6318474,
+    "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
+    "semantic_hash": "029f4905006c1fffd96bc863e2d98d3e"
+  },
+  "WEB/web/package.json": {
+    "mtime": 1783467257.264603,
+    "ast_hash": "eb6f483da336b91b261efc97a95272f8",
+    "semantic_hash": "eb6f483da336b91b261efc97a95272f8"
+  },
+  "WEB/web/postcss.config.js": {
+    "mtime": 1783465335.2480009,
+    "ast_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0",
+    "semantic_hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "WEB/web/src/App.tsx": {
+    "mtime": 1785112072.681483,
+    "ast_hash": "31fbc97d690b2891473879f8f006c0a3",
+    "semantic_hash": "31fbc97d690b2891473879f8f006c0a3"
+  },
+  "WEB/web/src/components/layout/Header.tsx": {
+    "mtime": 1783465362.2800264,
+    "ast_hash": "541d188ca499e959b58f7a962db1e5cd",
+    "semantic_hash": "541d188ca499e959b58f7a962db1e5cd"
+  },
+  "WEB/web/src/components/layout/MainLayout.tsx": {
+    "mtime": 1783465363.4710398,
+    "ast_hash": "215ccb828e8ae4bdf2dafdb4b4ec16b4",
+    "semantic_hash": "215ccb828e8ae4bdf2dafdb4b4ec16b4"
+  },
+  "WEB/web/src/components/layout/ProtectedRoute.tsx": {
+    "mtime": 1783893881.9301987,
+    "ast_hash": "b6e1d9bb7761130fe87e014912208df3",
+    "semantic_hash": "b6e1d9bb7761130fe87e014912208df3"
+  },
+  "WEB/web/src/components/layout/Sidebar.tsx": {
+    "mtime": 1785112041.4163134,
+    "ast_hash": "b2714c486836f280d33b667ad20b10d9",
+    "semantic_hash": "b2714c486836f280d33b667ad20b10d9"
+  },
+  "WEB/web/src/context/AuthContext.tsx": {
+    "mtime": 1784842000.0753424,
+    "ast_hash": "135e540eaff62d5dbbdec211f6de23a9",
+    "semantic_hash": "135e540eaff62d5dbbdec211f6de23a9"
+  },
+  "WEB/web/src/main.tsx": {
+    "mtime": 1783465448.2820826,
+    "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
+    "semantic_hash": "787e5a07efeb2bf6209d5937195f2f68"
+  },
+  "WEB/web/src/pages/CatalogManagement.tsx": {
+    "mtime": 1785112068.8396077,
+    "ast_hash": "359ef3eee5e1fac032bddf8a631596ef",
+    "semantic_hash": "359ef3eee5e1fac032bddf8a631596ef"
+  },
+  "WEB/web/src/pages/Dashboard.tsx": {
+    "mtime": 1785112049.5846891,
+    "ast_hash": "8e3752cb6e2c176bdad7136c167ac37c",
+    "semantic_hash": "8e3752cb6e2c176bdad7136c167ac37c"
+  },
+  "WEB/web/src/pages/FarmMap.tsx": {
+    "mtime": 1784840666.6760747,
+    "ast_hash": "7c83726299e8a105807049445c365172",
+    "semantic_hash": "7c83726299e8a105807049445c365172"
+  },
+  "WEB/web/src/pages/FarmersManagement.tsx": {
+    "mtime": 1785112054.4556823,
+    "ast_hash": "91b1c96bee9ff1ef7ffe91024801dbfc",
+    "semantic_hash": "91b1c96bee9ff1ef7ffe91024801dbfc"
+  },
+  "WEB/web/src/pages/Login.tsx": {
+    "mtime": 1784842801.9286187,
+    "ast_hash": "030df0763351083bfb9c1d8830a60859",
+    "semantic_hash": "030df0763351083bfb9c1d8830a60859"
+  },
+  "WEB/web/src/pages/SyncLogs.tsx": {
+    "mtime": 1785112059.0045924,
+    "ast_hash": "368e42f4af1d8b4cbb6294c9d2e260b2",
+    "semantic_hash": "368e42f4af1d8b4cbb6294c9d2e260b2"
+  },
+  "WEB/web/src/services/api.ts": {
+    "mtime": 1785112035.6502256,
+    "ast_hash": "53aeb4a5f02dac0fa0f4c1ab9094202b",
+    "semantic_hash": "53aeb4a5f02dac0fa0f4c1ab9094202b"
+  },
+  "WEB/web/tailwind.config.js": {
+    "mtime": 1783465333.2222097,
+    "ast_hash": "a8e426498a80e073249b2be543a82b9e",
+    "semantic_hash": "a8e426498a80e073249b2be543a82b9e"
+  },
+  "WEB/web/tsconfig.app.json": {
+    "mtime": 1783463621.648654,
+    "ast_hash": "5f2dafd737dea8a4ddcbb10f5113ac5a",
+    "semantic_hash": "5f2dafd737dea8a4ddcbb10f5113ac5a"
+  },
+  "WEB/web/tsconfig.json": {
+    "mtime": 1783463621.6537848,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": "a3d39fa780ebff65444de257f291ce6c"
+  },
+  "WEB/web/tsconfig.node.json": {
+    "mtime": 1783463621.6573875,
+    "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
+    "semantic_hash": "f9cb81ddcea69ffdab672fc8c48dca66"
+  },
+  "WEB/web/vite.config.ts": {
+    "mtime": 1783463657.7295544,
+    "ast_hash": "d5b0ca9a322055c67087d20f5fa24f48",
+    "semantic_hash": "d5b0ca9a322055c67087d20f5fa24f48"
+  },
+  "app/android/app/build.gradle.kts": {
+    "mtime": 1783463535.6155455,
+    "ast_hash": "e59102a08614eaa0d23884b9e1b67009",
+    "semantic_hash": "e59102a08614eaa0d23884b9e1b67009"
+  },
+  "app/android/app/src/main/kotlin/com/example/app/MainActivity.kt": {
+    "mtime": 1783463535.6336963,
+    "ast_hash": "d704ada99a4c8aa6dd5f79fa161bfd98",
+    "semantic_hash": "d704ada99a4c8aa6dd5f79fa161bfd98"
+  },
+  "app/android/build.gradle.kts": {
+    "mtime": 1783463535.657673,
+    "ast_hash": "803fe22651fbe96ed401eb0b66a492d1",
+    "semantic_hash": "803fe22651fbe96ed401eb0b66a492d1"
+  },
+  "app/android/settings.gradle.kts": {
+    "mtime": 1783463535.8504765,
+    "ast_hash": "7e2b812e622b81575eb9060fa80d2ae2",
+    "semantic_hash": "7e2b812e622b81575eb9060fa80d2ae2"
+  },
+  "app/ios/RunnerTests/RunnerTests.swift": {
+    "mtime": 1783463536.4188867,
+    "ast_hash": "24e5d095048eb86c30423f4e04b6e57b",
+    "semantic_hash": "24e5d095048eb86c30423f4e04b6e57b"
+  },
+  "app/ios/Runner/AppDelegate.swift": {
+    "mtime": 1761234127.4178452,
+    "ast_hash": "e277c49e98c9f80e9e71c0524a5cb60f",
+    "semantic_hash": "e277c49e98c9f80e9e71c0524a5cb60f"
+  },
+  "app/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1761234127.4178452,
+    "ast_hash": "31a08e429403e265cabfb31b3d65f049",
+    "semantic_hash": "31a08e429403e265cabfb31b3d65f049"
+  },
+  "app/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json": {
+    "mtime": 1761234127.4178452,
+    "ast_hash": "b9e927ac17345f2d5f052fe68a3487f9",
+    "semantic_hash": "b9e927ac17345f2d5f052fe68a3487f9"
+  },
+  "app/ios/Runner/Runner-Bridging-Header.h": {
+    "mtime": 1761234127.4178452,
+    "ast_hash": "7ad7b5cea096132de13ba526b2b9efbe",
+    "semantic_hash": "7ad7b5cea096132de13ba526b2b9efbe"
+  },
+  "app/lib/config/api_config.dart": {
+    "mtime": 1784841358.4957573,
+    "ast_hash": "5c20c1b7222d5fa67453fb4a35bf6500",
+    "semantic_hash": "5c20c1b7222d5fa67453fb4a35bf6500"
+  },
+  "app/lib/data/catalog_seeder.dart": {
+    "mtime": 1785109583.8014343,
+    "ast_hash": "1b6048d27354a2caedac60a9505e84db",
+    "semantic_hash": "1b6048d27354a2caedac60a9505e84db"
+  },
+  "app/lib/data/local_database.dart": {
+    "mtime": 1785111767.6871004,
+    "ast_hash": "786a00e891e9c66e3c62621e1c4c7f2e",
+    "semantic_hash": "786a00e891e9c66e3c62621e1c4c7f2e"
+  },
+  "app/lib/main.dart": {
+    "mtime": 1783894146.9235854,
+    "ast_hash": "9137c8bba62dae65b80aa53e6603e90f",
+    "semantic_hash": "9137c8bba62dae65b80aa53e6603e90f"
+  },
+  "app/lib/providers/auth_provider.dart": {
+    "mtime": 1785109587.458255,
+    "ast_hash": "68092e028937a654629ab64bd8886bf3",
+    "semantic_hash": "68092e028937a654629ab64bd8886bf3"
+  },
+  "app/lib/providers/sync_provider.dart": {
+    "mtime": 1784835915.0902975,
+    "ast_hash": "cfbf0219f66bcaf419c93c456fee92fc",
+    "semantic_hash": "cfbf0219f66bcaf419c93c456fee92fc"
+  },
+  "app/lib/screens/animal_registration_screen.dart": {
+    "mtime": 1785111797.9660294,
+    "ast_hash": "652d87b46fe8925faa109919d8e67111",
+    "semantic_hash": "652d87b46fe8925faa109919d8e67111"
+  },
+  "app/lib/screens/dashboard_screen.dart": {
+    "mtime": 1785111777.4174635,
+    "ast_hash": "d29a8e0d2ffe6596dba5354c25eb50b0",
+    "semantic_hash": "d29a8e0d2ffe6596dba5354c25eb50b0"
+  },
+  "app/lib/screens/farm_setup_screen.dart": {
+    "mtime": 1785109606.3255777,
+    "ast_hash": "bb4096312eba5625611a3c554cf6c6de",
+    "semantic_hash": "bb4096312eba5625611a3c554cf6c6de"
+  },
+  "app/lib/screens/health_record_screen.dart": {
+    "mtime": 1783834732.7114453,
+    "ast_hash": "ce6f5bed1ee0352af24b2ff363502655",
+    "semantic_hash": "ce6f5bed1ee0352af24b2ff363502655"
+  },
+  "app/lib/screens/login_screen.dart": {
+    "mtime": 1785109597.448857,
+    "ast_hash": "d6dac800639d974ebe7aa579c2532414",
+    "semantic_hash": "d6dac800639d974ebe7aa579c2532414"
+  },
+  "app/lib/screens/milking_registration_screen.dart": {
+    "mtime": 1785111788.9248137,
+    "ast_hash": "154184ad5a62b148be8a782f7b053d51",
+    "semantic_hash": "154184ad5a62b148be8a782f7b053d51"
+  },
+  "app/lib/screens/splash_screen.dart": {
+    "mtime": 1785109591.0894244,
+    "ast_hash": "a8fe0e61c421dd8100e21bda61f8450e",
+    "semantic_hash": "a8fe0e61c421dd8100e21bda61f8450e"
+  },
+  "app/lib/screens/sync_center_screen.dart": {
+    "mtime": 1783894210.447313,
+    "ast_hash": "f749a97f8a45ee38e8cfebf4d584b5ef",
+    "semantic_hash": "f749a97f8a45ee38e8cfebf4d584b5ef"
+  },
+  "app/lib/theme/theme.dart": {
+    "mtime": 1784846213.5433023,
+    "ast_hash": "a7235d333156ed344f359e2401b27dcb",
+    "semantic_hash": "a7235d333156ed344f359e2401b27dcb"
+  },
+  "app/lib/widgets/bottom_nav_bar.dart": {
+    "mtime": 1783464517.5120337,
+    "ast_hash": "591c7dd7303118f3f33c5b8e7c3653c5",
+    "semantic_hash": "591c7dd7303118f3f33c5b8e7c3653c5"
+  },
+  "app/lib/widgets/custom_app_bar.dart": {
+    "mtime": 1783464961.7161996,
+    "ast_hash": "46b5f9eaad924697b72e7cdac15eea42",
+    "semantic_hash": "46b5f9eaad924697b72e7cdac15eea42"
+  },
+  "app/linux/flutter/generated_plugin_registrant.cc": {
+    "mtime": 1783463540.5005336,
+    "ast_hash": "d07afe003d5837167bdd357d593f20a0",
+    "semantic_hash": "d07afe003d5837167bdd357d593f20a0"
+  },
+  "app/linux/flutter/generated_plugin_registrant.h": {
+    "mtime": 1783463540.4990044,
+    "ast_hash": "d295462c9da9f7fef22dc86c34492318",
+    "semantic_hash": "d295462c9da9f7fef22dc86c34492318"
+  },
+  "app/linux/runner/main.cc": {
+    "mtime": 1761234127.4340024,
+    "ast_hash": "539395bcd63dba20afed0838d136189f",
+    "semantic_hash": "539395bcd63dba20afed0838d136189f"
+  },
+  "app/linux/runner/my_application.cc": {
+    "mtime": 1783463536.572345,
+    "ast_hash": "8f8cefa84811f8b21b2d435c02153d6e",
+    "semantic_hash": "8f8cefa84811f8b21b2d435c02153d6e"
+  },
+  "app/linux/runner/my_application.h": {
+    "mtime": 1761234127.4340024,
+    "ast_hash": "f6b37d58752c8671078b6f660e33e8c1",
+    "semantic_hash": "f6b37d58752c8671078b6f660e33e8c1"
+  },
+  "app/macos/Flutter/GeneratedPluginRegistrant.swift": {
+    "mtime": 1783895438.044174,
+    "ast_hash": "7e3e4d3bd6854af86c09ec7569c97d05",
+    "semantic_hash": "7e3e4d3bd6854af86c09ec7569c97d05"
+  },
+  "app/macos/RunnerTests/RunnerTests.swift": {
+    "mtime": 1783463536.960265,
+    "ast_hash": "8059f5d27a19c556eeafb49b3f9b7bdd",
+    "semantic_hash": "8059f5d27a19c556eeafb49b3f9b7bdd"
+  },
+  "app/macos/Runner/AppDelegate.swift": {
+    "mtime": 1761234127.4340024,
+    "ast_hash": "4b52e0b89ebfef9baf45b04548c463d6",
+    "semantic_hash": "4b52e0b89ebfef9baf45b04548c463d6"
+  },
+  "app/macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1761234127.4340024,
+    "ast_hash": "1d48e925145d4b573a3b5d7960a1c585",
+    "semantic_hash": "1d48e925145d4b573a3b5d7960a1c585"
+  },
+  "app/macos/Runner/MainFlutterWindow.swift": {
+    "mtime": 1761234127.4340024,
+    "ast_hash": "93c22dae2d93f3dc1402e121901f582b",
+    "semantic_hash": "93c22dae2d93f3dc1402e121901f582b"
+  },
+  "app/test/widget_test.dart": {
+    "mtime": 1783575665.185814,
+    "ast_hash": "52ee3d7c6dc26563d8fb1e0eae744319",
+    "semantic_hash": "52ee3d7c6dc26563d8fb1e0eae744319"
+  },
+  "app/web/manifest.json": {
+    "mtime": 1783463537.0581832,
+    "ast_hash": "34d7a93a24a9edfdcbc76b9763f73a11",
+    "semantic_hash": "34d7a93a24a9edfdcbc76b9763f73a11"
+  },
+  "app/windows/flutter/generated_plugin_registrant.cc": {
+    "mtime": 1783466529.001998,
+    "ast_hash": "713a1b821b51c975a52514bafd190988",
+    "semantic_hash": "713a1b821b51c975a52514bafd190988"
+  },
+  "app/windows/flutter/generated_plugin_registrant.h": {
+    "mtime": 1783463540.504183,
+    "ast_hash": "0ea33875f9f8e118f9c2ded03e2e2835",
+    "semantic_hash": "0ea33875f9f8e118f9c2ded03e2e2835"
+  },
+  "app/windows/runner/flutter_window.cpp": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "2f463f9b7da67a2d692a012f9ea85e0c",
+    "semantic_hash": "2f463f9b7da67a2d692a012f9ea85e0c"
+  },
+  "app/windows/runner/flutter_window.h": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "7defcc89d4a26d56e801241d624d48fb",
+    "semantic_hash": "7defcc89d4a26d56e801241d624d48fb"
+  },
+  "app/windows/runner/main.cpp": {
+    "mtime": 1783463537.197079,
+    "ast_hash": "704faafcfe9ba179edf8dfee1ba39818",
+    "semantic_hash": "704faafcfe9ba179edf8dfee1ba39818"
+  },
+  "app/windows/runner/resource.h": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "1ade5dd15e613479a15e8832ed276f2b",
+    "semantic_hash": "1ade5dd15e613479a15e8832ed276f2b"
+  },
+  "app/windows/runner/utils.cpp": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "432461b09d862a2f8dadf380ff0e34e5",
+    "semantic_hash": "432461b09d862a2f8dadf380ff0e34e5"
+  },
+  "app/windows/runner/utils.h": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "fd81e143f5614eb6fd75efe539002853",
+    "semantic_hash": "fd81e143f5614eb6fd75efe539002853"
+  },
+  "app/windows/runner/win32_window.cpp": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "571eb8234dbc2661be03aa5f2a4d2fca",
+    "semantic_hash": "571eb8234dbc2661be03aa5f2a4d2fca"
+  },
+  "app/windows/runner/win32_window.h": {
+    "mtime": 1761234127.449612,
+    "ast_hash": "7569387d58711ab975940f4df3b4bcda",
+    "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
+  },
+  "create_admin.py": {
+    "mtime": 1784843653.132141,
+    "ast_hash": "b50701a3135fc4acee2aa0e65408d09f",
+    "semantic_hash": "b50701a3135fc4acee2aa0e65408d09f"
+  },
+  "db_audit.py": {
+    "mtime": 1784843102.7132435,
+    "ast_hash": "0554b990f5514abae081cdb04d9486b1",
+    "semantic_hash": "0554b990f5514abae081cdb04d9486b1"
+  },
+  "db_fix.py": {
+    "mtime": 1784843206.9179988,
+    "ast_hash": "7b6fd0aefa6e3bb2bea4025d9eed7064",
+    "semantic_hash": "7b6fd0aefa6e3bb2bea4025d9eed7064"
+  },
+  "push_git.py": {
+    "mtime": 1785112281.32738,
+    "ast_hash": "91bdad712389fa30bc98cb354f88e0f9",
+    "semantic_hash": "91bdad712389fa30bc98cb354f88e0f9"
+  }
+}

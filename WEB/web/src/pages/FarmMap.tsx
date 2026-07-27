@@ -1,76 +1,126 @@
+import { useEffect, useState } from 'react';
+import { fetchMapaFincas } from '../services/api';
 
 const FarmMap = () => {
+  const [fincas, setFincas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const loadFincas = async () => {
+      try {
+        const data = await fetchMapaFincas();
+        setFincas(data);
+      } catch (error) {
+        console.error('Failed to load fincas directory', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFincas();
+  }, []);
+
+  const filteredFincas = fincas.filter(f => 
+    f.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.ganaderoNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    f.municipio.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="flex-1 flex flex-col h-full gap-gutter">
-      <div className="flex justify-between items-end shrink-0">
+    <div className="flex flex-col gap-6">
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-          <h2 className="font-headline-xl text-headline-xl text-primary">Directorio de Fincas</h2>
-          <p className="font-body-lg text-body-lg text-on-surface-variant mt-1">Gestión centralizada de propiedades y recursos ganaderos.</p>
+          <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+            <span className="material-symbols-outlined text-emerald-600 text-3xl">landscape</span>
+            Directorio y Mapa de Fincas
+          </h2>
+          <p className="text-slate-500 text-sm mt-1">Gestión centralizada de propiedades rurales, censos ganaderos y UGM acumulados.</p>
         </div>
-        <button className="hidden md:flex items-center gap-sm bg-secondary text-on-secondary px-lg py-2 rounded-lg font-label-md text-label-md hover:bg-primary transition-colors shadow-sm">
-          <span className="material-symbols-outlined text-sm">add</span>
-          Nueva Finca
-        </button>
+        <div className="relative w-full md:w-72">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+          <input
+            type="text"
+            placeholder="Buscar por finca, ganadero..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+          />
+        </div>
       </div>
 
-      <div className="flex-1 flex gap-gutter overflow-hidden relative">
-        <div className="flex-1 flex flex-col bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden transition-all duration-300">
-          <div className="p-md border-b border-outline-variant flex flex-wrap gap-md justify-between items-center bg-surface-bright">
-            <div className="flex items-center gap-sm">
-              <button className="flex items-center gap-xs px-sm py-1.5 border border-outline-variant rounded-md text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md transition-colors">
-                <span className="material-symbols-outlined text-sm">filter_list</span>
-                Filtros
-              </button>
-              <span className="h-4 w-px bg-outline-variant mx-sm"></span>
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Mostrando 45 Resultados</span>
-            </div>
-            <div className="flex items-center gap-sm">
-              <button className="p-1.5 text-on-surface-variant hover:bg-surface-container-low rounded-md border border-outline-variant transition-colors" title="Exportar CSV">
-                <span className="material-symbols-outlined text-sm">download</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead className="sticky top-0 bg-surface-container z-10 shadow-[0_1px_0_#e1e2e4]">
+      {/* Directory Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                <th className="py-3 px-4">Finca</th>
+                <th className="py-3 px-4">Propietario / Ganadero</th>
+                <th className="py-3 px-4">Ubicación Geográfica</th>
+                <th className="py-3 px-4 text-center">Censo Bovino</th>
+                <th className="py-3 px-4 text-center">UGM Totales</th>
+                <th className="py-3 px-4 text-center">Estado Sanitario</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
                 <tr>
-                  <th className="px-md py-3 font-label-md text-label-md text-on-surface-variant w-16">ID</th>
-                  <th className="px-md py-3 font-label-md text-label-md text-on-surface-variant">Nombre de la Finca</th>
-                  <th className="px-md py-3 font-label-md text-label-md text-on-surface-variant">Dueño</th>
-                  <th className="px-md py-3 font-label-md text-label-md text-on-surface-variant">Ubicación</th>
-                  <th className="px-md py-3 font-label-md text-label-md text-on-surface-variant text-right">Total Ganado</th>
+                  <td colSpan={6} className="py-8 text-center text-slate-400">Cargando directorio de fincas...</td>
                 </tr>
-              </thead>
-              <tbody className="bg-surface-container-lowest divide-y divide-outline-variant">
-                {[
-                  { id: 'FIN-001', name: 'Finca El Encanto', owner: 'Carlos Mendoza', location: 'Valle del Cauca', count: '1,245' },
-                  { id: 'FIN-002', name: 'La Esperanza', owner: 'Maria Rodriguez', location: 'Antioquia', count: '850' },
-                  { id: 'FIN-003', name: 'Hacienda San José', owner: 'Inversiones Agrícolas SA', location: 'Meta', count: '3,420' },
-                  { id: 'FIN-004', name: 'Los Robles', owner: 'Familia Torres', location: 'Cundinamarca', count: '412' }
-                ].map((farm) => (
-                  <tr key={farm.id} className="table-row-hover transition-colors cursor-pointer group">
-                    <td className="px-md py-4 font-body-md text-body-md text-on-surface-variant group-hover:text-primary transition-colors">{farm.id}</td>
-                    <td className="px-md py-4 font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors">{farm.name}</td>
-                    <td className="px-md py-4 font-body-md text-body-md text-on-surface-variant">{farm.owner}</td>
-                    <td className="px-md py-4 font-body-md text-body-md text-on-surface-variant flex items-center gap-xs">
-                      <span className="material-symbols-outlined text-[16px] text-outline">location_on</span>
-                      {farm.location}
+              ) : filteredFincas.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 italic">No se encontraron fincas con el criterio de búsqueda.</td>
+                </tr>
+              ) : (
+                filteredFincas.map((f) => (
+                  <tr key={f.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center">
+                        <span className="material-symbols-outlined text-lg">domain</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{f.nombre}</p>
+                        <p className="text-xs text-slate-400">ID: {f.id.substring(0, 8)}...</p>
+                      </div>
                     </td>
-                    <td className="px-md py-4 font-body-md text-body-md font-medium text-on-surface text-right">{farm.count}</td>
+                    <td className="py-3.5 px-4 text-slate-700 font-semibold">{f.ganaderoNombre}</td>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm text-emerald-600">location_on</span>
+                        <span>{f.municipio} {f.comarca ? `• ${f.comarca}` : ''}</span>
+                      </div>
+                      {f.latitud && f.longitud && (
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          GPS: {f.latitud.toFixed(4)}, {f.longitud.toFixed(4)}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-extrabold text-slate-900">
+                      {f.totalGanado} cabezas
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-extrabold text-teal-700">
+                      {f.totalUGM} UGM
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      {f.tieneAlertasSanitarias ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 font-bold text-[10px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                          Alerta Activa
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          Sano
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          <div className="p-sm border-t border-outline-variant flex justify-between items-center bg-surface-container-low">
-            <span className="font-label-sm text-label-sm text-on-surface-variant ml-sm">Página 1 de 5</span>
-            <div className="flex gap-sm">
-              <button className="p-1 rounded hover:bg-surface-variant text-outline disabled:opacity-50"><span className="material-symbols-outlined text-[18px]">chevron_left</span></button>
-              <button className="p-1 rounded hover:bg-surface-variant text-outline"><span className="material-symbols-outlined text-[18px]">chevron_right</span></button>
-            </div>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

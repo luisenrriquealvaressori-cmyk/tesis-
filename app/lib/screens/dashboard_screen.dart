@@ -251,7 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildActionCard(
                     context, 
                     title: 'Registrar\nAnimal', 
-                    icon: Icons.add, 
+                    icon: Icons.add_circle_outline, 
                     color: Theme.of(context).colorScheme.primary,
                     onTap: () async {
                       await context.push('/register_animal');
@@ -261,7 +261,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildActionCard(
                     context, 
                     title: 'Reportar\nSanidad', 
-                    icon: Icons.medical_services, 
+                    icon: Icons.health_and_safety, 
                     color: Theme.of(context).colorScheme.errorContainer,
                     iconColor: Theme.of(context).colorScheme.onErrorContainer,
                     onTap: () async {
@@ -272,7 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildActionCard(
                     context, 
                     title: 'Ordeño\nDiario', 
-                    icon: Icons.ev_station, 
+                    icon: Icons.opacity, 
                     color: Theme.of(context).colorScheme.tertiaryContainer,
                     iconColor: Theme.of(context).colorScheme.onTertiaryContainer,
                     onTap: () async {
@@ -283,7 +283,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _buildActionCard(
                     context, 
                     title: 'Sincronizar\nDatos', 
-                    icon: Icons.sync, 
+                    icon: Icons.cloud_sync, 
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
                     onTap: () async {

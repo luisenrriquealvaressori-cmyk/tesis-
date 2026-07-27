@@ -4,11 +4,11 @@ const Sidebar = () => {
   const location = useLocation();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: 'dashboard', fill: false },
+    { name: 'Dashboard', path: '/', icon: 'space_dashboard', fill: true },
     { name: 'Mapa de Fincas', path: '/farms', icon: 'map', fill: true },
-    { name: 'Padrón de Ganaderos', path: '/farmers', icon: 'groups', fill: true },
-    { name: 'Catálogos Maestros', path: '/catalogs', icon: 'settings', fill: true },
-    { name: 'Auditoría Sync', path: '/sync-logs', icon: 'sync', fill: false }
+    { name: 'Padrón de Ganaderos', path: '/farmers', icon: 'badge', fill: true },
+    { name: 'Catálogos Maestros', path: '/catalogs', icon: 'clinical_notes', fill: true },
+    { name: 'Auditoría Sync', path: '/sync-logs', icon: 'sync_alt', fill: true }
   ];
 
   return (

@@ -30,17 +30,17 @@ class BottomNavBar extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'Inicio',
           ),
           NavigationDestination(
             icon: Icon(Icons.pets_outlined),
             selectedIcon: Icon(Icons.pets),
-            label: 'My Cattle',
+            label: 'Mi Hato',
           ),
           NavigationDestination(
-            icon: Icon(Icons.medical_services_outlined),
-            selectedIcon: Icon(Icons.medical_services),
-            label: 'Health',
+            icon: Icon(Icons.health_and_safety_outlined),
+            selectedIcon: Icon(Icons.health_and_safety),
+            label: 'Salud',
           ),
         ],
       ),
