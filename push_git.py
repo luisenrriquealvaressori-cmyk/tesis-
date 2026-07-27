@@ -12,7 +12,7 @@ res1 = subprocess.run(["git", "add", "."], capture_output=True, text=True)
 print(res1.stdout, res1.stderr)
 
 commit_msg = (
-    "fix: eliminar catálogos ficticios locales por defecto y limpiar tablas SQLite (clearFirst: true) al sincronizar con Neon DB"
+    "fix: añadir botón de reintento de carga de catálogos en farm_setup_screen si la base Neon no responde o está vacía"
 )
 
 print("[3/4] Creando commit en Git...")

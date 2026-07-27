@@ -314,6 +314,41 @@ class _FarmSetupScreenState extends State<FarmSetupScreen> {
                       _buildCard(
                         title: '2. Ubicación Geográfica',
                         children: [
+                          if (_departamentos.isEmpty && !_isLoadingCatalogs) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.amber.shade700),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.cloud_off, color: Colors.amber.shade900),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text(
+                                          'No se descargaron catálogos del servidor.',
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: _loadCatalogs,
+                                    icon: const Icon(Icons.refresh, size: 16),
+                                    label: const Text('Reintentar cargar desde Neon DB'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
                           // Departamento
                           _buildLabel('Departamento *'),
                           const SizedBox(height: 8),

@@ -219,13 +219,12 @@ class SyncCenterScreen extends StatelessWidget {
                     final userId = authProvider.usuarioId;
                     final token = authProvider.token;
 
-                    if (userId == null || token == null) {
+                    if (userId == null || token == null || token.startsWith('local_token')) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Error: No se encontró la sesión del usuario.'),
-                            backgroundColor: Colors.red,
-                          ),
+                        AppNotificationService.warning(
+                          context,
+                          'Sesión no sincronizada',
+                          subtitle: 'Debes iniciar sesión con una cuenta registrada en el servidor para sincronizar datos con la plataforma web.',
                         );
                       }
                       return;

@@ -124,10 +124,10 @@ class CatalogSyncService {
     }
   }
 
-  /// Método sin catálogos locales por defecto: garantiza que no se muestren
-  /// registros ficticios y que sólo se desplieguen los catálogos de Neon DB.
+  /// No inserta ningún dato quemado ni ficticio.
+  /// Todos los catálogos (departamentos, municipios, comarcas, etc.) se descargan
+  /// 100% directamente desde la base de datos remota del servidor (Neon DB).
   static Future<void> ensureBaseCatalogs() async {
-    // No insertar datos ficticios o por defecto.
     return;
   }
 }
