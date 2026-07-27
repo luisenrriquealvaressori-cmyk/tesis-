@@ -152,13 +152,17 @@ class SyncProvider extends ChangeNotifier {
         for (final rs in registrosSalud) {
           await LocalDatabase.instance
               .markAsSynced('registros_salud', rs['id'] as String);
+          await LocalDatabase.instance
+              .markTratamientosAsSyncedByRegistro(rs['id'] as String);
         }
 
         await refreshPendingCount();
         return true;
       } else {
         final body = jsonDecode(response.body);
-        _lastError = body['error'] ?? 'Error del servidor: ${response.statusCode}';
+        final err = body['error'] ?? 'Error del servidor: ${response.statusCode}';
+        final detail = body['detail'] ?? body['message'] ?? '';
+        _lastError = detail.toString().trim().isNotEmpty ? '$err (${detail.toString().trim()})' : err;
         _currentState = SyncState.pending;
         notifyListeners();
         return false;

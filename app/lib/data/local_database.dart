@@ -744,6 +744,12 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
     await db.update(table, {'is_synced': 1}, where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Marca los tratamientos de un registro de salud como sincronizados
+  Future<void> markTratamientosAsSyncedByRegistro(String registroSaludId) async {
+    final db = await instance.database;
+    await db.update('tratamientos', {'is_synced': 1}, where: 'registro_salud_id = ?', whereArgs: [registroSaludId]);
+  }
+
   // =========================================================================
   // HELPERS: Métodos genéricos y filtrados adicionales
   // =========================================================================
