@@ -547,6 +547,28 @@ class _GanadoScreenState extends State<GanadoScreen> {
         title: const Text('Mi Ganado', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Escanear QR',
+            onPressed: () async {
+              final result = await context.push('/qr_scanner');
+              if (result != null && result is String) {
+                final animal = _animales.firstWhere(
+                  (a) => a['id'] == result || a['identificacion'] == result,
+                  orElse: () => <String, dynamic>{},
+                );
+                if (animal.isNotEmpty) {
+                  _mostrarHistorial(animal);
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Animal no encontrado en el dispositivo')),
+                    );
+                  }
+                }
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Registrar animal',
             onPressed: () async {
@@ -749,8 +771,8 @@ class _GanadoScreenState extends State<GanadoScreen> {
 
   Future<void> _mostrarHistorial(Map<String, dynamic> animal) async {
     final animalId = animal['id'] as String;
-    final historial =
-        await LocalDatabase.instance.getHistorialSaludAnimal(animalId);
+    final historialSalud = await LocalDatabase.instance.getHistorialSaludAnimal(animalId);
+    final historialReproductivo = await LocalDatabase.instance.getRegistrosReproductivosByAnimal(animalId);
 
     if (!mounted) return;
 
@@ -819,10 +841,26 @@ class _GanadoScreenState extends State<GanadoScreen> {
                   ),
                 ],
               ),
-            ),
             const Divider(height: 1),
             Expanded(
-              child: historial.isEmpty
+              child: DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    const TabBar(
+                      labelColor: Color(0xFF16A34A),
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: Color(0xFF16A34A),
+                      tabs: [
+                        Tab(text: 'Salud', icon: Icon(Icons.health_and_safety)),
+                        Tab(text: 'Reproducción', icon: Icon(Icons.favorite)),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          // Tab 1: Salud
+                          historialSalud.isEmpty
                   ? const Center(
                       child: Padding(
                         padding: EdgeInsets.all(32),
@@ -847,10 +885,10 @@ class _GanadoScreenState extends State<GanadoScreen> {
                   : ListView.separated(
                       controller: controller,
                       padding: const EdgeInsets.all(16),
-                      itemCount: historial.length,
+                      itemCount: historialSalud.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (_, i) {
-                        final h = historial[i];
+                        final h = historialSalud[i];
                         final obligatoria =
                             (h['notificacion_obligatoria'] as int?) == 1;
                         final fecha = h['fecha_deteccion'] as String;
@@ -935,6 +973,81 @@ class _GanadoScreenState extends State<GanadoScreen> {
                         );
                       },
                     ),
+                    ),
+                          
+                          // Tab 2: Reproducción
+                          historialReproductivo.isEmpty
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(32),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.favorite_border, size: 56, color: Colors.pink),
+                                        SizedBox(height: 12),
+                                        Text('Sin registros reproductivos',
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        SizedBox(height: 6),
+                                        Text(
+                                          'Este animal no tiene eventos reproductivos registrados.',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  controller: controller,
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: historialReproductivo.length,
+                                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                  itemBuilder: (_, i) {
+                                    final h = historialReproductivo[i];
+                                    final fecha = h['fecha_evento'] as String;
+                                    final fechaFmt = fecha.length >= 10 ? fecha.substring(0, 10) : fecha;
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.pink.shade50,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Colors.pink.shade200),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.favorite, size: 16, color: Colors.pink),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  h['tipo_evento'] as String,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                              Text(fechaFmt, style: Theme.of(context).textTheme.labelSmall),
+                                            ],
+                                          ),
+                                          if (h['observaciones'] != null && (h['observaciones'] as String).isNotEmpty) ...[
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              h['observaciones'] as String,
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

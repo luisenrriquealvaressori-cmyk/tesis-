@@ -6,6 +6,8 @@ import 'screens/splash_screen.dart';
 import 'screens/farm_setup_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/health_record_screen.dart';
+import 'screens/reproductive_record_screen.dart';
+import 'screens/qr_scanner_screen.dart';
 import 'screens/animal_registration_screen.dart';
 import 'screens/milking_registration_screen.dart';
 import 'screens/sync_center_screen.dart';
@@ -54,6 +56,14 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/health_record',
       builder: (context, state) => const HealthRecordScreen(),
+    ),
+    GoRoute(
+      path: '/reproductive_record',
+      builder: (context, state) => const ReproductiveRecordScreen(),
+    ),
+    GoRoute(
+      path: '/qr_scanner',
+      builder: (context, state) => const QRScannerScreen(),
     ),
     GoRoute(
       path: '/register_animal',

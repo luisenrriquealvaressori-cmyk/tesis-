@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchFincaDetalle } from '../services/api';
+import { fetchFincaDetalle, fetchRegistrosReproductivosFinca } from '../services/api';
 
 const ESTADO_STYLES: Record<string, string> = {
   Sana: 'bg-emerald-100 text-emerald-800',
@@ -13,15 +13,18 @@ const FarmDetail = () => {
   const navigate = useNavigate();
   const [detalle, setDetalle] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'animales' | 'salud' | 'produccion'>('animales');
+  const [tab, setTab] = useState<'animales' | 'salud' | 'produccion' | 'reproduccion'>('animales');
   const [searchAnimal, setSearchAnimal] = useState('');
 
   useEffect(() => {
     if (!id) return;
     const load = async () => {
       try {
-        const data = await fetchFincaDetalle(id);
-        setDetalle(data);
+        const [data, repData] = await Promise.all([
+          fetchFincaDetalle(id),
+          fetchRegistrosReproductivosFinca(id).catch(() => [])
+        ]);
+        setDetalle({ ...data, registrosReproductivos: repData });
       } catch (e) {
         console.error(e);
       } finally {
@@ -122,12 +125,17 @@ const FarmDetail = () => {
 
       {/* ── Tabs ─────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="flex border-b border-slate-200">
-          {([['animales', 'pets', 'Animales'], ['salud', 'medical_services', 'Historial de Salud'], ['produccion', 'show_chart', 'Producción 30 días']] as const).map(([key, icon, label]) => (
+        <div className="flex border-b border-slate-200 overflow-x-auto">
+          {([
+            ['animales', 'pets', 'Animales'], 
+            ['salud', 'medical_services', 'Historial de Salud'], 
+            ['produccion', 'show_chart', 'Producción 30 días'],
+            ['reproduccion', 'favorite', 'Reproducción']
+          ] as const).map(([key, icon, label]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 ${
+              className={`flex items-center whitespace-nowrap gap-2 px-5 py-3.5 text-sm font-semibold transition-all border-b-2 ${
                 tab === key
                   ? 'border-emerald-500 text-emerald-700 bg-emerald-50/60'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
@@ -246,6 +254,37 @@ const FarmDetail = () => {
                 );
               })}
             </div>
+          </div>
+        )}
+        {/* Tab: Reproducción */}
+        {tab === 'reproduccion' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                  <th className="py-2.5 px-4 text-left">Fecha</th>
+                  <th className="py-2.5 px-4 text-left">Animal</th>
+                  <th className="py-2.5 px-4 text-left">Evento</th>
+                  <th className="py-2.5 px-4 text-left">Toro (Opcional)</th>
+                  <th className="py-2.5 px-4 text-left">Observaciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(!detalle.registrosReproductivos || detalle.registrosReproductivos.length === 0) ? (
+                  <tr><td colSpan={5} className="py-10 text-center text-slate-400 italic text-sm">Sin registros reproductivos.</td></tr>
+                ) : detalle.registrosReproductivos.map((rr: any) => (
+                  <tr key={rr.id} className="hover:bg-violet-50/40 transition-colors">
+                    <td className="py-3 px-4 text-slate-600 text-xs font-mono whitespace-nowrap">{new Date(rr.fechaEvento).toLocaleDateString('es-NI')}</td>
+                    <td className="py-3 px-4 font-bold text-slate-900 font-mono">{rr.animalNombre}</td>
+                    <td className="py-3 px-4">
+                      <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 font-bold text-xs">{rr.tipoEvento}</span>
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 text-xs font-mono">{rr.toroId || '—'}</td>
+                    <td className="py-3 px-4 text-slate-500 text-xs max-w-xs truncate">{rr.observaciones || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

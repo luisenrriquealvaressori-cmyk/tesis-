@@ -74,6 +74,9 @@ export const fetchMapaFincas = async () =>
 export const fetchFincaDetalle = async (id: string) =>
     fetchWithAuth(`/dashboard/finca/${id}`);
 
+export const fetchRegistrosReproductivosFinca = async (fincaId: string) =>
+    fetchWithAuth(`/reproduccion/finca/${fincaId}`);
+
 // ── Módulo: Animales Global ────────────────────────────────────────────────────
 export const fetchAnimalesGlobal = async () =>
     fetchWithAuth('/dashboard/animales');
