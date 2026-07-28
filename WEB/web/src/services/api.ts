@@ -98,6 +98,22 @@ export const fetchAuditoriaSync = async () =>
 export const fetchUsuariosWeb = async () =>
     fetchWithAuth('/web-auth/usuarios-web');
 
+// Cambiar la propia contraseña (usuario autenticado, requiere clave actual)
+export const cambiarClaveApi = async (claveActual: string, claveNueva: string) =>
+    fetchWithAuth('/web-auth/cambiar-clave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claveActual, claveNueva })
+    });
+
+// Resetear la contraseña de cualquier usuario (solo Administrador)
+export const resetClaveApi = async (userId: string, claveNueva: string) =>
+    fetchWithAuth(`/web-auth/reset-clave/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claveNueva })
+    });
+
 // ── Catálogos ─────────────────────────────────────────────────────────────────
 export const fetchEnfermedades = async () =>
     fetchWithAuth('/catalogos/enfermedades');

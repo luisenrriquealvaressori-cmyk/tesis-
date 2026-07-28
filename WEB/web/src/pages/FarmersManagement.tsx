@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchGanaderos } from '../services/api';
+import { useExport, GANADERO_EXPORT_COLUMNS } from '../hooks/useExport';
+
 
 const ROWS_PER_PAGE = 10;
 
@@ -35,6 +37,7 @@ const FarmersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const { exportToCSV, exporting } = useExport();
 
   useEffect(() => {
     const load = async () => {
@@ -64,19 +67,6 @@ const FarmersManagement = () => {
     setPage(1);
   };
 
-  const exportCsv = () => {
-    const headers = ['Nombre', 'Teléfono', 'Municipio', 'Comarca', 'Fincas', 'Animales', 'Registro'];
-    const rows = filtered.map(g => [
-      g.nombre, g.telefono, g.municipio, g.comarca || '',
-      g.totalFincas, g.totalAnimales,
-      new Date(g.createdAt).toLocaleDateString('es-NI')
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'padron_ganaderos.csv'; a.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
@@ -106,12 +96,12 @@ const FarmersManagement = () => {
           </div>
           {/* Export CSV */}
           <button
-            onClick={exportCsv}
-            disabled={loading || filtered.length === 0}
+            onClick={() => exportToCSV(filtered, GANADERO_EXPORT_COLUMNS, 'padron_ganaderos')}
+            disabled={loading || exporting || filtered.length === 0}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">download</span>
-            Exportar CSV
+            <span className="material-symbols-outlined text-[18px]">{exporting ? 'sync' : 'download'}</span>
+            {exporting ? 'Exportando...' : `Exportar CSV (${filtered.length})`}
           </button>
         </div>
       </div>

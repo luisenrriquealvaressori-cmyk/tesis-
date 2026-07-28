@@ -229,5 +229,76 @@ namespace API.Controllers
 
             return Ok(usuarios);
         }
+
+        // ── POST /api/web-auth/cambiar-clave ─────────────────────────────────
+        // Cada usuario puede cambiar su propia contraseña (requiere clave actual).
+        [HttpPost("cambiar-clave")]
+        [Authorize]
+        public async Task<IActionResult> CambiarClave([FromBody] CambiarClaveRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.ClaveActual) || string.IsNullOrWhiteSpace(req.ClaveNueva))
+                return BadRequest(new { error = "Debe proporcionar la clave actual y la nueva." });
+
+            if (req.ClaveNueva.Length < 6)
+                return BadRequest(new { error = "La nueva contraseña debe tener al menos 6 caracteres." });
+
+            var emailClaim = User.FindFirstValue(ClaimTypes.Email)
+                          ?? User.FindFirstValue(ClaimTypes.Name);
+
+            if (string.IsNullOrEmpty(emailClaim))
+                return Unauthorized(new { error = "Token inválido." });
+
+            var usuario = await _context.UsuariosWeb
+                .FirstOrDefaultAsync(u => u.Email == emailClaim && !u.IsDeleted);
+
+            if (usuario is null)
+                return NotFound(new { error = "Usuario no encontrado." });
+
+            if (!BCrypt.Net.BCrypt.Verify(req.ClaveActual, usuario.ClaveHash))
+                return BadRequest(new { error = "La contraseña actual es incorrecta." });
+
+            usuario.ClaveHash = BCrypt.Net.BCrypt.HashPassword(req.ClaveNueva);
+            usuario.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Contraseña actualizada correctamente." });
+        }
+
+        // ── POST /api/web-auth/reset-clave/{id} ──────────────────────────────
+        // Solo Administradores pueden resetear la clave de otro usuario.
+        [HttpPost("reset-clave/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> ResetClave(Guid id, [FromBody] ResetClaveRequest req)
+        {
+            var rolClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (rolClaim != "Administrador")
+                return Forbid();
+
+            if (string.IsNullOrWhiteSpace(req.ClaveNueva) || req.ClaveNueva.Length < 6)
+                return BadRequest(new { error = "La nueva contraseña debe tener al menos 6 caracteres." });
+
+            var usuario = await _context.UsuariosWeb
+                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+
+            if (usuario is null)
+                return NotFound(new { error = "Usuario no encontrado." });
+
+            usuario.ClaveHash = BCrypt.Net.BCrypt.HashPassword(req.ClaveNueva);
+            usuario.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Contraseña de {usuario.Nombre} restablecida correctamente." });
+        }
+
+        public class CambiarClaveRequest
+        {
+            public required string ClaveActual { get; set; }
+            public required string ClaveNueva { get; set; }
+        }
+
+        public class ResetClaveRequest
+        {
+            public required string ClaveNueva { get; set; }
+        }
     }
 }

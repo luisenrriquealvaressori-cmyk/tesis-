@@ -1,15 +1,43 @@
 import { useEffect, useState } from 'react';
-import { fetchUsuariosWeb, registerWebUserApi } from '../services/api';
+import { fetchUsuariosWeb, registerWebUserApi, resetClaveApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+
+const ROL_LABELS: Record<string, string> = {
+  Administrador: 'Administrador',
+  Supervisor: 'Supervisor',
+  Ganadero: 'Ganadero',
+};
+const ROL_STYLES: Record<string, string> = {
+  Administrador: 'bg-violet-100 text-violet-800 border border-violet-200',
+  Supervisor: 'bg-blue-100 text-blue-800 border border-blue-200',
+  Ganadero: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+};
+
+const strengthLabel = (len: number) => {
+  if (len < 6) return 'Muy corta';
+  if (len < 8) return 'Débil';
+  if (len < 12) return 'Moderada';
+  return '✓ Fuerte';
+};
 
 const UsersManagement = () => {
   const { rol } = useAuth();
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal crear usuario
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ nombre: '', email: '', clave: '', cargo: '', rol: 2 });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Modal reset contraseña
+  const [resetTarget, setResetTarget] = useState<any | null>(null);
+  const [resetClave, setResetClave] = useState('');
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState('');
 
   const isAdmin = rol === 'Administrador';
 
@@ -18,17 +46,22 @@ const UsersManagement = () => {
     try {
       const data = await fetchUsuariosWeb();
       setUsuarios(data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
     if (!form.nombre || !form.email || !form.clave) {
-      setError('Nombre, correo y contraseña son requeridos.'); return;
+      setError('Nombre, correo y contraseña son requeridos.');
+      return;
     }
-    setSaving(true); setError('');
+    setSaving(true);
+    setError('');
     try {
       await registerWebUserApi(form.email, form.nombre, form.clave, form.rol, form.cargo);
       setShowModal(false);
@@ -36,20 +69,44 @@ const UsersManagement = () => {
       await load();
     } catch (e: any) {
       setError(e.message || 'Error al crear usuario');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const ROL_LABELS: Record<string, string> = {
-    Administrador: 'Administrador',
-    Supervisor: 'Supervisor',
-    Ganadero: 'Ganadero',
-  };
-  const ROL_STYLES: Record<string, string> = {
-    Administrador: 'bg-violet-100 text-violet-800 border border-violet-200',
-    Supervisor: 'bg-blue-100 text-blue-800 border border-blue-200',
-    Ganadero: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  const handleResetClave = async () => {
+    if (!resetClave || resetClave.length < 6) {
+      setResetError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (resetClave !== resetConfirm) {
+      setResetError('Las contraseñas no coinciden.');
+      return;
+    }
+    setResetting(true);
+    setResetError('');
+    try {
+      const res = await resetClaveApi(resetTarget.id, resetClave);
+      setResetSuccess(res.message || 'Contraseña restablecida correctamente.');
+      setResetClave('');
+      setResetConfirm('');
+      setTimeout(() => { setResetTarget(null); setResetSuccess(''); }, 2200);
+    } catch (e: any) {
+      setResetError(e.message || 'Error al restablecer la contraseña.');
+    } finally {
+      setResetting(false);
+    }
   };
 
+  const openReset = (u: any) => {
+    setResetTarget(u);
+    setResetClave('');
+    setResetConfirm('');
+    setResetError('');
+    setResetSuccess('');
+  };
+
+  // Guard: sin acceso
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -63,7 +120,7 @@ const UsersManagement = () => {
   return (
     <div className="flex flex-col gap-5 animate-fade-in">
 
-      {/* Header */}
+      {/* ── Header ───────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2" style={{ fontFamily: 'Outfit, Inter, sans-serif' }}>
@@ -71,85 +128,221 @@ const UsersManagement = () => {
             Gestión de Usuarios Web
           </h2>
           <p className="text-slate-500 text-sm mt-0.5">
-            {loading ? 'Cargando...' : `${usuarios.length} usuario${usuarios.length !== 1 ? 's' : ''} registrado${usuarios.length !== 1 ? 's' : ''} en el portal`}
+            {loading
+              ? 'Cargando...'
+              : `${usuarios.length} usuario${usuarios.length !== 1 ? 's' : ''} registrado${usuarios.length !== 1 ? 's' : ''} en el portal`}
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-all hover:scale-[1.02] shadow-sm"
+          onClick={() => { setShowModal(true); setError(''); }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-all hover:scale-[1.02] shadow-sm"
         >
           <span className="material-symbols-outlined text-[18px]">person_add</span>
           Nuevo Usuario
         </button>
       </div>
 
-      {/* Tabla */}
+      {/* ── Tabla ────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
-              <th className="py-3 px-4">Usuario</th>
-              <th className="py-3 px-4">Correo</th>
-              <th className="py-3 px-4">Cargo</th>
-              <th className="py-3 px-4 text-center">Rol</th>
-              <th className="py-3 px-4 text-center">Fecha Registro</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              [1,2,3].map(i => (
-                <tr key={i}>{[60,40,30,20,20].map((w,j) => (
-                  <td key={j} className="py-3 px-4"><div className="skeleton h-4 rounded" style={{ width: `${w}%` }}></div></td>
-                ))}</tr>
-              ))
-            ) : usuarios.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-14 text-center">
-                  <span className="material-symbols-outlined text-slate-300 text-5xl block mb-2">people</span>
-                  <p className="text-slate-400 italic text-sm">No hay usuarios registrados.</p>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                <th className="py-3 px-4 text-left">Usuario</th>
+                <th className="py-3 px-4 text-left">Email</th>
+                <th className="py-3 px-4 text-left">Cargo</th>
+                <th className="py-3 px-4 text-center">Rol</th>
+                <th className="py-3 px-4 text-center">Fecha Registro</th>
+                <th className="py-3 px-4 text-center">Acciones</th>
               </tr>
-            ) : usuarios.map((u: any) => (
-              <tr key={u.id} className="hover:bg-violet-50/40 transition-colors">
-                <td className="py-3.5 px-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-800 font-bold flex items-center justify-center text-sm shrink-0">
-                      {u.nombre.charAt(0).toUpperCase()}
-                    </div>
-                    <p className="font-bold text-slate-900">{u.nombre}</p>
-                  </div>
-                </td>
-                <td className="py-3.5 px-4 text-slate-600 font-mono text-xs">{u.email}</td>
-                <td className="py-3.5 px-4 text-slate-500">{u.cargo || '—'}</td>
-                <td className="py-3.5 px-4 text-center">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${ROL_STYLES[u.rol] ?? 'bg-slate-100 text-slate-600'}`}>
-                    {ROL_LABELS[u.rol] ?? u.rol}
-                  </span>
-                </td>
-                <td className="py-3.5 px-4 text-center text-slate-500 text-xs font-mono">
-                  {new Date(u.createdAt).toLocaleDateString('es-NI')}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                [1, 2, 3].map(i => (
+                  <tr key={i}>
+                    {[60, 40, 30, 20, 20, 10].map((w, j) => (
+                      <td key={j} className="py-3 px-4">
+                        <div className="skeleton h-4 rounded" style={{ width: `${w}%` }} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : usuarios.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-14 text-center">
+                    <span className="material-symbols-outlined text-slate-300 text-5xl block mb-2">people</span>
+                    <p className="text-slate-400 italic text-sm">No hay usuarios registrados.</p>
+                  </td>
+                </tr>
+              ) : (
+                usuarios.map((u: any) => (
+                  <tr key={u.id} className="hover:bg-violet-50/40 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-800 font-black flex items-center justify-center text-sm shrink-0">
+                          {u.nombre.charAt(0).toUpperCase()}
+                        </div>
+                        <p className="font-bold text-slate-900">{u.nombre}</p>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600 font-mono text-xs">{u.email}</td>
+                    <td className="py-3.5 px-4 text-slate-500">{u.cargo || '—'}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${ROL_STYLES[u.rol] ?? 'bg-slate-100 text-slate-600'}`}>
+                        {ROL_LABELS[u.rol] ?? u.rol}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center text-slate-500 text-xs font-mono">
+                      {new Date(u.createdAt).toLocaleDateString('es-NI')}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <button
+                        onClick={() => openReset(u)}
+                        title="Restablecer contraseña"
+                        className="p-2 rounded-xl text-slate-400 hover:bg-amber-100 hover:text-amber-600 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">key</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal crear usuario */}
+      {/* ── Modal: Restablecer contraseña ─────────────────── */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-sm mx-4 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  Restablecer Contraseña
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Usuario: <span className="font-bold text-slate-700">{resetTarget.nombre}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setResetTarget(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            {resetSuccess ? (
+              <div className="py-8 flex flex-col items-center gap-3 text-center">
+                <span
+                  className="material-symbols-outlined text-emerald-500 text-5xl"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check_circle
+                </span>
+                <p className="font-bold text-emerald-700">{resetSuccess}</p>
+              </div>
+            ) : (
+              <>
+                {resetError && (
+                  <div className="mb-4 p-3 rounded-xl bg-rose-50 text-rose-700 text-sm flex items-center gap-2 border border-rose-200">
+                    <span className="material-symbols-outlined text-[16px]">error</span>
+                    {resetError}
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Nueva Contraseña</label>
+                    <input
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={resetClave}
+                      onChange={e => setResetClave(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Confirmar Contraseña</label>
+                    <input
+                      type="password"
+                      placeholder="Repite la contraseña"
+                      value={resetConfirm}
+                      onChange={e => setResetConfirm(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    />
+                  </div>
+
+                  {resetClave.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex gap-1">
+                        {[6, 8, 12].map((len, i) => (
+                          <div
+                            key={i}
+                            className={`h-1.5 flex-1 rounded-full transition-all ${
+                              resetClave.length >= len
+                                ? i === 0 ? 'bg-rose-400' : i === 1 ? 'bg-amber-400' : 'bg-emerald-500'
+                                : 'bg-slate-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-slate-400">{strengthLabel(resetClave.length)}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 mt-5">
+                  <button
+                    onClick={() => setResetTarget(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleResetClave}
+                    disabled={resetting}
+                    className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {resetting ? (
+                      <>
+                        <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[16px]">key</span>
+                        Restablecer
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Crear nuevo usuario ────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-full max-w-md mx-4 animate-scale-in">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-xl font-extrabold text-slate-900" style={{ fontFamily: 'Outfit, sans-serif' }}>Nuevo Usuario Web</h3>
-              <button onClick={() => { setShowModal(false); setError(''); }}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+              <h3 className="text-xl font-extrabold text-slate-900" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Nuevo Usuario Web
+              </h3>
+              <button
+                onClick={() => { setShowModal(false); setError(''); }}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+              >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
 
             {error && (
               <div className="mb-4 p-3 rounded-xl bg-rose-50 text-rose-700 text-sm flex items-center gap-2 border border-rose-200">
-                <span className="material-symbols-outlined text-[16px]">error</span>{error}
+                <span className="material-symbols-outlined text-[16px]">error</span>
+                {error}
               </div>
             )}
 
@@ -185,13 +378,25 @@ const UsersManagement = () => {
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => { setShowModal(false); setError(''); }}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">
+              <button
+                onClick={() => { setShowModal(false); setError(''); }}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+              >
                 Cancelar
               </button>
-              <button onClick={handleCreate} disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                {saving ? <><span className="material-symbols-outlined animate-spin text-[16px]">sync</span>Guardando...</> : 'Crear Usuario'}
+              <button
+                onClick={handleCreate}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>
+                    Guardando...
+                  </>
+                ) : (
+                  'Crear Usuario'
+                )}
               </button>
             </div>
           </div>

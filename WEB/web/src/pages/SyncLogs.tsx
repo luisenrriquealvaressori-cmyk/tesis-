@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchAuditoriaSync } from '../services/api';
+import { useExport, SYNC_EXPORT_COLUMNS } from '../hooks/useExport';
+
 
 type ActionType = 'Insert' | 'Update' | 'Delete' | 'All';
 
@@ -32,6 +34,7 @@ const SyncLogs = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { exportToCSV, exporting } = useExport();
 
   const loadLogs = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -107,6 +110,14 @@ const SyncLogs = () => {
             <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full">
               {loading ? '…' : `${filtered.length} registros`}
             </span>
+            <button
+              onClick={() => exportToCSV(filtered, SYNC_EXPORT_COLUMNS, 'auditoria_sync')}
+              disabled={loading || exporting || filtered.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all disabled:opacity-40"
+            >
+              <span className={`material-symbols-outlined text-[16px] ${exporting ? 'animate-spin' : ''}`}>{exporting ? 'sync' : 'download'}</span>
+              {exporting ? 'Exportando...' : 'CSV'}
+            </button>
             <button
               onClick={() => loadLogs(true)}
               disabled={refreshing}
