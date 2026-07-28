@@ -290,6 +290,32 @@ namespace API.Controllers
             return Ok(new { message = $"Contraseña de {usuario.Nombre} restablecida correctamente." });
         }
 
+        // ── POST /api/web-auth/reset-clave-app/{id} ──────────────────────────
+        // Solo Administradores pueden resetear la clave de usuarios móviles (Ganaderos).
+        [HttpPost("reset-clave-app/{id:guid}")]
+        [Authorize]
+        public async Task<IActionResult> ResetClaveApp(Guid id, [FromBody] ResetClaveRequest req)
+        {
+            var rolClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (rolClaim != "Administrador")
+                return Forbid();
+
+            if (string.IsNullOrWhiteSpace(req.ClaveNueva) || req.ClaveNueva.Length < 6)
+                return BadRequest(new { error = "La nueva contraseña debe tener al menos 6 caracteres." });
+
+            var usuarioApp = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+
+            if (usuarioApp is null)
+                return NotFound(new { error = "Usuario móvil no encontrado." });
+
+            usuarioApp.ClaveHash = BCrypt.Net.BCrypt.HashPassword(req.ClaveNueva);
+            usuarioApp.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Contraseña del ganadero {usuarioApp.Nombre} restablecida correctamente." });
+        }
+
         public class CambiarClaveRequest
         {
             public required string ClaveActual { get; set; }

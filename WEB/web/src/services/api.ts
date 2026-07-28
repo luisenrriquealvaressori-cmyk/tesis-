@@ -106,9 +106,17 @@ export const cambiarClaveApi = async (claveActual: string, claveNueva: string) =
         body: JSON.stringify({ claveActual, claveNueva })
     });
 
-// Resetear la contraseña de cualquier usuario (solo Administrador)
+// Resetear la contraseña de cualquier usuario web (solo Administrador)
 export const resetClaveApi = async (userId: string, claveNueva: string) =>
     fetchWithAuth(`/web-auth/reset-clave/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claveNueva })
+    });
+
+// Resetear la contraseña de un usuario móvil/Ganadero (solo Administrador)
+export const resetClaveAppApi = async (userId: string, claveNueva: string) =>
+    fetchWithAuth(`/web-auth/reset-clave-app/${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ claveNueva })
