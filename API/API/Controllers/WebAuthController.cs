@@ -203,5 +203,31 @@ namespace API.Controllers
 
             return Ok(logs);
         }
+
+        // GET /api/web-auth/usuarios-web
+        // Listar usuarios del portal web (solo Administradores)
+        [HttpGet("usuarios-web")]
+        [Authorize]
+        public async Task<IActionResult> GetUsuariosWeb()
+        {
+            var rolClaim = User.FindFirstValue(ClaimTypes.Role);
+            if (rolClaim != "Administrador")
+                return Forbid();
+
+            var usuarios = await _context.UsuariosWeb
+                .OrderByDescending(u => u.CreatedAt)
+                .Select(u => new UsuarioWebDto
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    Email = u.Email,
+                    Rol = u.Rol.ToString(),
+                    Cargo = u.Cargo,
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(usuarios);
+        }
     }
 }

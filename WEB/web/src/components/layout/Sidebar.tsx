@@ -7,11 +7,17 @@ const Sidebar = () => {
   const { nombre, rol, logout } = useAuth();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: 'space_dashboard', fill: true },
-    { name: 'Mapa de Fincas', path: '/farms', icon: 'map', fill: true },
-    { name: 'Padrón de Ganaderos', path: '/farmers', icon: 'badge', fill: true },
-    { name: 'Catálogos Maestros', path: '/catalogs', icon: 'clinical_notes', fill: true },
-    { name: 'Auditoría Sync', path: '/sync-logs', icon: 'sync_alt', fill: true }
+    // Sección principal
+    { name: 'Dashboard', path: '/', icon: 'space_dashboard', fill: true, section: 'General' },
+    { name: 'Reportes', path: '/reports', icon: 'bar_chart', fill: true, section: null },
+    // Sección ganado
+    { name: 'Mapa de Fincas', path: '/farms', icon: 'map', fill: true, section: 'Ganadería' },
+    { name: 'Panel de Animales', path: '/animals', icon: 'pets', fill: true, section: null },
+    { name: 'Padrón de Ganaderos', path: '/farmers', icon: 'badge', fill: true, section: null },
+    // Sección sistema
+    { name: 'Catálogos Maestros', path: '/catalogs', icon: 'clinical_notes', fill: true, section: 'Sistema' },
+    { name: 'Auditoría Sync', path: '/sync-logs', icon: 'sync_alt', fill: true, section: null },
+    ...(rol === 'Administrador' ? [{ name: 'Usuarios Web', path: '/settings/users', icon: 'manage_accounts', fill: true, section: null }] : []),
   ];
 
   const handleLogout = () => {
@@ -42,33 +48,36 @@ const Sidebar = () => {
       </div>
       
       {/* ── Navigation ───────────────────────────────────── */}
-      <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar px-sm">
-        <p className="px-md text-[10px] font-bold text-emerald-400/60 uppercase tracking-widest mb-1">Navegación Principal</p>
+      <div className="flex-1 flex flex-col gap-1 overflow-y-auto custom-scrollbar px-sm">
         {navItems.map((item, idx) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           
           return (
-            <Link 
-              key={item.path} 
-              to={item.path}
-              style={{ animationDelay: `${idx * 60}ms` }}
-              className={`animate-slide-in-left flex items-center gap-md p-sm mx-xs rounded-xl transition-all duration-200 group relative ${
-                isActive
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-900/30 font-bold'
-                  : 'text-emerald-100/70 hover:bg-emerald-800/40 hover:text-white'
-              }`}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full opacity-80"></span>
+            <div key={item.path}>
+              {item.section && (
+                <p className="px-md text-[9px] font-bold text-emerald-400/50 uppercase tracking-widest mt-3 mb-1">{item.section}</p>
               )}
-              <span 
-                className={`material-symbols-outlined text-[22px] transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`}
-                style={{ fontVariationSettings: item.fill && isActive ? "'FILL' 1" : "" }}
+              <Link 
+                to={item.path}
+                style={{ animationDelay: `${idx * 50}ms` }}
+                className={`animate-slide-in-left flex items-center gap-md p-sm mx-xs rounded-xl transition-all duration-200 group relative ${
+                  isActive
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-900/30 font-bold'
+                    : 'text-emerald-100/70 hover:bg-emerald-800/40 hover:text-white'
+                }`}
               >
-                {item.icon}
-              </span>
-              <span className="font-label-md text-label-md">{item.name}</span>
-            </Link>
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full opacity-80"></span>
+                )}
+                <span 
+                  className={`material-symbols-outlined text-[22px] transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`}
+                  style={{ fontVariationSettings: item.fill && isActive ? "'FILL' 1" : "" }}
+                >
+                  {item.icon}
+                </span>
+                <span className="font-label-md text-label-md">{item.name}</span>
+              </Link>
+            </div>
           );
         })}
       </div>
