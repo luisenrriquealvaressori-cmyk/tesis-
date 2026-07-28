@@ -99,6 +99,30 @@ class SyncProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Helper para reintentos con backoff exponencial
+  Future<http.Response> _retryWithBackoff(
+    Future<http.Response> Function() action, {
+    int maxRetries = 3,
+  }) async {
+    int retryCount = 0;
+    while (true) {
+      try {
+        final response = await action();
+        // Si la respuesta es exitosa o es un error del cliente (ej. 400, 401), no reintentar
+        if (response.statusCode < 500) {
+          return response;
+        }
+        if (retryCount >= maxRetries) return response;
+      } catch (e) {
+        if (retryCount >= maxRetries) rethrow;
+      }
+      
+      retryCount++;
+      final delaySeconds = 2 ^ retryCount; // 2, 4, 8
+      await Future.delayed(Duration(seconds: delaySeconds));
+    }
+  }
+
   /// Sincroniza todos los registros pendientes con el servidor.
   /// Retorna `true` si fue exitoso.
   Future<bool> syncDataNow(String usuarioId, String token) async {
@@ -125,8 +149,8 @@ class SyncProvider extends ChangeNotifier {
         'registrosSaludNuevos': registrosSalud.map(_mapRegistroSalud).toList(),
       };
 
-      // 3. Enviar al servidor
-      final response = await http
+      // 3. Enviar al servidor con backoff exponencial
+      final response = await _retryWithBackoff(() => http
           .post(
             Uri.parse('$_baseUrl/api/sync/push'),
             headers: {
@@ -135,7 +159,7 @@ class SyncProvider extends ChangeNotifier {
             },
             body: jsonEncode(payload),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 30)));
 
       if (response.statusCode == 200) {
         // 4. Marcar todos los registros como sincronizados en SQLite
@@ -230,7 +254,7 @@ class SyncProvider extends ChangeNotifier {
     if (!_isConnected) return false;
 
     try {
-      final response = await http
+      final response = await _retryWithBackoff(() => http
           .get(
             Uri.parse('$_baseUrl/api/sync/pull-user-data'),
             headers: {
@@ -238,7 +262,7 @@ class SyncProvider extends ChangeNotifier {
               'Authorization': 'Bearer $token',
             },
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 30)));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;

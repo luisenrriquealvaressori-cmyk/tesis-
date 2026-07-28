@@ -612,6 +612,27 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
     };
   }
 
+  /// Producción de los últimos 7 días agrupada por fecha para la gráfica
+  Future<List<Map<String, dynamic>>> getProduccionUltimos7Dias(String fincaId) async {
+    final db = await instance.database;
+    final hoy = DateTime.now();
+    final hace7Dias = hoy.subtract(const Duration(days: 6));
+    final fechaInicioStr = '${hace7Dias.year}-${hace7Dias.month.toString().padLeft(2, '0')}-${hace7Dias.day.toString().padLeft(2, '0')}';
+    
+    return await db.rawQuery('''
+      SELECT 
+        substr(pl.fecha, 1, 10) as fecha_corta,
+        SUM(pl.litros) as total_litros
+      FROM produccion_leche pl
+      INNER JOIN animales a ON pl.animal_id = a.id
+      WHERE a.finca_id = ?
+        AND pl.is_deleted = 0
+        AND pl.fecha >= ?
+      GROUP BY substr(pl.fecha, 1, 10)
+      ORDER BY substr(pl.fecha, 1, 10) ASC
+    ''', [fincaId, fechaInicioStr]);
+  }
+
   /// Medicamentos sugeridos para una enfermedad (basado en historial de la finca).
   /// Devuelve los medicamentos más usados para esa enfermedad en orden de frecuencia.
   Future<List<Map<String, dynamic>>> getMedicamentosSugeridos(

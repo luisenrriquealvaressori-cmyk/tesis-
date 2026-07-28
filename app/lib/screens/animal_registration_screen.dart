@@ -30,6 +30,7 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
   DateTime? _fechaNacimiento;
   bool _isSaving = false;
   bool _isLoadingCatalogs = true;
+  int _currentStep = 0;
 
   @override
   void initState() {
@@ -79,6 +80,18 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
         'Fecha de nacimiento requerida',
         subtitle: 'Selecciona la fecha de nacimiento del animal',
       );
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_fechaNacimiento!.isAfter(now)) {
+      AppNotificationService.warning(context, 'Fecha inválida', subtitle: 'La fecha de nacimiento no puede estar en el futuro.');
+      return;
+    }
+
+    final ageInYears = now.difference(_fechaNacimiento!).inDays / 365.25;
+    if (ageInYears > 30) {
+      AppNotificationService.warning(context, 'Edad inválida', subtitle: 'El animal no puede tener más de 30 años.');
       return;
     }
 
@@ -165,241 +178,236 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Form(
               key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // Formulario principal
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Identificación / Arete
-                          _buildLabel('Identificación / Arete *'),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _identificacionController,
-                            textCapitalization: TextCapitalization.characters,
-                            decoration: const InputDecoration(
-                              hintText: 'Ej: B-4592',
-                              prefixIcon: Icon(Icons.tag),
+              child: Stepper(
+                currentStep: _currentStep,
+                controlsBuilder: (BuildContext context, ControlsDetails details) {
+                  final isLastStep = _currentStep == 2;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 24.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isSaving ? null : details.onStepContinue,
+                            icon: _isSaving && isLastStep
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : Icon(isLastStep ? Icons.save : Icons.arrow_forward),
+                            label: Text(isLastStep
+                                ? (_isSaving ? 'Guardando...' : 'Guardar Animal')
+                                : 'Continuar'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Ingresa la identificación'
-                                : null,
                           ),
-                          const SizedBox(height: 16),
-
-                          // Raza
-                          _buildLabel('Raza *'),
-                          const SizedBox(height: 8),
-                          DropdownSearch<Map<String, dynamic>>(
-                            popupProps: PopupProps.menu(
-                              showSearchBox: true,
-                              searchFieldProps: const TextFieldProps(
-                                decoration: InputDecoration(
-                                  hintText: 'Buscar raza...',
-                                  prefixIcon: Icon(Icons.search),
+                        ),
+                        if (_currentStep > 0) ...[
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isSaving ? null : details.onStepCancel,
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text('Atrás'),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+                onStepContinue: () {
+                  if (_currentStep == 0) {
+                    // Validar paso 1
+                    if (!_formKey.currentState!.validate() || _selectedRaza == null || _fechaNacimiento == null) {
+                      AppNotificationService.warning(context, 'Faltan datos', subtitle: 'Completa todos los campos obligatorios.');
+                      return;
+                    }
+                  }
+                  if (_currentStep < 2) {
+                    setState(() => _currentStep++);
+                  } else {
+                    if (!_isSaving) _saveAnimal();
+                  }
+                },
+                onStepCancel: () {
+                  if (_currentStep > 0) {
+                    setState(() => _currentStep--);
+                  } else {
+                    context.pop();
+                  }
+                },
+                steps: [
+                  Step(
+                    title: const Text('Datos Básicos'),
+                    isActive: _currentStep >= 0,
+                    state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('Identificación / Arete *'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _identificacionController,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(hintText: 'Ej: B-4592', prefixIcon: Icon(Icons.tag)),
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa la identificación' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabel('Raza *'),
+                        const SizedBox(height: 8),
+                        DropdownSearch<Map<String, dynamic>>(
+                          popupProps: PopupProps.menu(showSearchBox: true),
+                          items: _razas,
+                          itemAsString: (r) {
+                            final proposito = r['proposito'] as int;
+                            final label = proposito == 1 ? '🥛 Leche' : proposito == 2 ? '🥩 Carne' : '⚖️ Doble';
+                            return '${r['nombre']} — $label';
+                          },
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(hintText: 'Seleccione raza...', prefixIcon: Icon(Icons.category)),
+                          ),
+                          onChanged: (v) => setState(() => _selectedRaza = v),
+                          selectedItem: _selectedRaza,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabel('Sexo *'),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _sexo = 1),
+                                child: _buildSexoButton(
+                                  icon: Icons.female,
+                                  label: 'Hembra ♀',
+                                  isSelected: _sexo == 1,
+                                  activeColor: Colors.pink.shade600,
+                                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                                 ),
                               ),
                             ),
-                            items: _razas,
-                            itemAsString: (r) {
-                              final proposito = r['proposito'] as int;
-                              final label = proposito == 1
-                                  ? '🥛 Leche'
-                                  : proposito == 2
-                                      ? '🥩 Carne'
-                                      : '⚖️ Doble';
-                              return '${r['nombre']} — $label';
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _sexo = 2),
+                                child: _buildSexoButton(
+                                  icon: Icons.male,
+                                  label: 'Macho ♂',
+                                  isSelected: _sexo == 2,
+                                  activeColor: Colors.blue.shade700,
+                                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLabel('Fecha de Nacimiento *'),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: _pickFechaNacimiento,
+                          child: InputDecorator(
+                            decoration: const InputDecoration(prefixIcon: Icon(Icons.calendar_today), suffixIcon: Icon(Icons.arrow_drop_down)),
+                            child: Text(
+                              _fechaNacimiento != null
+                                  ? '${_fechaNacimiento!.day.toString().padLeft(2, '0')}/${_fechaNacimiento!.month.toString().padLeft(2, '0')}/${_fechaNacimiento!.year}'
+                                  : 'Seleccionar fecha...',
+                              style: _fechaNacimiento != null
+                                  ? Theme.of(context).textTheme.bodyLarge
+                                  : Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Step(
+                    title: const Text('Indicadores'),
+                    isActive: _currentStep >= 1,
+                    state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                    content: _fechaNacimiento == null
+                        ? const Text('Selecciona la fecha de nacimiento en el paso anterior.', style: TextStyle(color: Colors.red))
+                        : Builder(
+                            builder: (context) {
+                              final dias = DateTime.now().difference(_fechaNacimiento!).inDays;
+                              final meses = (dias / 30.44).floor();
+                              final anios = (meses / 12).toStringAsFixed(1);
+                              String categoria = 'Ternero/a';
+                              double ugm = 0.4;
+                              if (meses >= 24) {
+                                categoria = _sexo == 2 ? 'Toro Reproductor' : 'Vaca Adulta';
+                                ugm = _sexo == 2 ? 1.2 : 1.0;
+                              } else if (meses >= 12) {
+                                categoria = _sexo == 2 ? 'Novillo' : 'Vaquilla';
+                                ugm = 0.7;
+                              } else if (meses >= 6) {
+                                categoria = 'Destaque';
+                                ugm = 0.4;
+                              }
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Theme.of(context).colorScheme.primaryContainer),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.analytics, size: 18, color: Theme.of(context).colorScheme.primary),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Indicadores Zootécnicos Estimados',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.primary),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text('• Edad: $meses meses (~$anios años)'),
+                                    Text('• Categoría: $categoria'),
+                                    Text('• Equivalencia UGM: $ugm UGM'),
+                                  ],
+                                ),
+                              );
                             },
-                            dropdownDecoratorProps: const DropDownDecoratorProps(
-                              dropdownSearchDecoration: InputDecoration(
-                                hintText: 'Seleccione una raza...',
-                                prefixIcon: Icon(Icons.category),
-                              ),
-                            ),
-                            onChanged: (v) => setState(() => _selectedRaza = v),
-                            selectedItem: _selectedRaza,
                           ),
-                          const SizedBox(height: 16),
-
-                          // Sexo
-                          _buildLabel('Sexo *'),
-                          const SizedBox(height: 8),
-                          Row(
+                  ),
+                  Step(
+                    title: const Text('Confirmación'),
+                    isActive: _currentStep >= 2,
+                    content: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange),
+                          ),
+                          child: const Row(
                             children: [
+                              Icon(Icons.sync_problem, color: Colors.orange),
+                              SizedBox(width: 12),
                               Expanded(
-                                child: InkWell(
-                                  onTap: () => setState(() => _sexo = 1),
-                                  child: _buildSexoButton(
-                                    icon: Icons.female,
-                                    label: 'Hembra ♀',
-                                    isSelected: _sexo == 1,
-                                    activeColor: Colors.pink.shade600,
-                                    borderRadius: const BorderRadius.horizontal(
-                                        left: Radius.circular(8)),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => setState(() => _sexo = 2),
-                                  child: _buildSexoButton(
-                                    icon: Icons.male,
-                                    label: 'Macho ♂',
-                                    isSelected: _sexo == 2,
-                                    activeColor: Colors.blue.shade700,
-                                    borderRadius: const BorderRadius.horizontal(
-                                        right: Radius.circular(8)),
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Guardado en el dispositivo.', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    Text('Se sincronizará con el servidor cuando haya conexión.'),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-
-                          // Fecha de Nacimiento
-                          _buildLabel('Fecha de Nacimiento *'),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _pickFechaNacimiento,
-                            child: InputDecorator(
-                              decoration: const InputDecoration(
-                                prefixIcon: Icon(Icons.calendar_today),
-                                suffixIcon: Icon(Icons.arrow_drop_down),
-                              ),
-                              child: Text(
-                                _fechaNacimiento != null
-                                    ? '${_fechaNacimiento!.day.toString().padLeft(2, '0')}/${_fechaNacimiento!.month.toString().padLeft(2, '0')}/${_fechaNacimiento!.year}'
-                                    : 'Seleccionar fecha...',
-                                style: _fechaNacimiento != null
-                                    ? Theme.of(context).textTheme.bodyLarge
-                                    : Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                        ),
-                              ),
-                            ),
-                          ),
-
-                          // Cálculos Zootécnicos Estimados en tiempo real
-                          if (_fechaNacimiento != null) ...[
-                            const SizedBox(height: 16),
-                            Builder(
-                              builder: (context) {
-                                final dias = DateTime.now().difference(_fechaNacimiento!).inDays;
-                                final meses = (dias / 30.44).floor();
-                                final anios = (meses / 12).toStringAsFixed(1);
-                                
-                                String categoria = 'Ternero/a';
-                                double ugm = 0.4;
-                                if (meses >= 24) {
-                                  categoria = _sexo == 2 ? 'Toro Reproductor' : 'Vaca Adulta';
-                                  ugm = _sexo == 2 ? 1.2 : 1.0;
-                                } else if (meses >= 12) {
-                                  categoria = _sexo == 2 ? 'Novillo' : 'Vaquilla';
-                                  ugm = 0.7;
-                                } else if (meses >= 6) {
-                                  categoria = 'Destaque';
-                                  ugm = 0.4;
-                                }
-
-                                return Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Theme.of(context).colorScheme.primaryContainer),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(Icons.analytics, size: 18, color: Theme.of(context).colorScheme.primary),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Indicadores Zootécnicos Estimados',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                              color: Theme.of(context).colorScheme.primary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text('• Edad: $meses meses (~$anios años)'),
-                                      Text('• Categoría: $categoria'),
-                                      Text('• Equivalencia UGM: $ugm UGM'),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-
-                    // Aviso de guardado local
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.sync_problem, color: Colors.orange),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Guardado en el dispositivo.',
-                                    style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text('Se sincronizará con el servidor cuando haya conexión.'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 80),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: ElevatedButton.icon(
-            onPressed: (_isSaving || _isLoadingCatalogs) ? null : _saveAnimal,
-            icon: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.save),
-            label: Text(_isSaving ? 'Guardando...' : 'Guardar Animal'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 56),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -661,22 +669,26 @@ class _GanadoScreenState extends State<GanadoScreen> {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Avatar circular con color de propósito
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: _propositoColor(proposito),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
-                ),
-                child: Center(
-                  child: Text(
-                    esMacho ? '♂' : '♀',
-                    style: TextStyle(
-                        fontSize: 24,
-                        color: esMacho ? Colors.blue.shade700 : Colors.pink.shade600),
+              Hero(
+                tag: 'avatar_${animal['id']}',
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: _propositoColor(proposito),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                    ),
+                    child: Center(
+                      child: Text(
+                        esMacho ? '♂' : '♀',
+                        style: TextStyle(
+                            fontSize: 24,
+                            color: esMacho ? Colors.blue.shade700 : Colors.pink.shade600),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -766,14 +778,28 @@ class _GanadoScreenState extends State<GanadoScreen> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
+                  Hero(
+                    tag: 'avatar_${animal['id']}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: _propositoColor((animal['raza_proposito'] as int?) ?? 3),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                        ),
+                        child: Center(
+                          child: Text(
+                            ((animal['sexo'] as int) == 2) ? '♂' : '♀',
+                            style: TextStyle(
+                                fontSize: 24,
+                                color: ((animal['sexo'] as int) == 2) ? Colors.blue.shade700 : Colors.pink.shade600),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Icon(Icons.medical_information,
-                        color: Colors.white),
                   ),
                   const SizedBox(width: 12),
                   Column(

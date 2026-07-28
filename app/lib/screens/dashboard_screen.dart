@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../data/local_database.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _vacasEnRetiroCount = 0;
 
   List<Map<String, dynamic>> _ultimosRegistros = [];
+  List<Map<String, dynamic>> _produccion7Dias = [];
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final totalAnimales = await LocalDatabase.instance.getTotalAnimales(fincaId);
       final kpis = await LocalDatabase.instance.getKPIsProduccion(fincaId);
       final ultimosRegistros = await LocalDatabase.instance.getUltimosRegistrosSalud(fincaId);
+      final produccion7Dias = await LocalDatabase.instance.getProduccionUltimos7Dias(fincaId);
       
       if (mounted) {
         setState(() {
@@ -52,6 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _totalUGM = (kpis['totalUGM'] as num).toDouble();
           _vacasEnRetiroCount = kpis['vacasEnRetiroCount'] as int;
           _ultimosRegistros = ultimosRegistros;
+          _produccion7Dias = produccion7Dias;
           _isLoading = false;
         });
       }
@@ -65,12 +70,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Widget _buildShimmerDashboard() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: double.infinity,
+                height: 140,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? _buildShimmerDashboard()
         : SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -185,7 +255,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       colors: [const Color(0xFFD97706), const Color(0xFFF59E0B)],
                     ),
                   ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: _buildMetricCard(
                       title: 'RETIRO LECHE',
@@ -200,7 +269,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
+              
+              // Gráfico de Producción
+              _buildChartSection(),
+              
+              const SizedBox(height: 24),
+              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -388,6 +463,120 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _loadDashboardData();
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildChartSection() {
+    if (_produccion7Dias.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.show_chart, size: 40, color: Colors.grey),
+            SizedBox(height: 10),
+            Text('No hay datos de producción recientes para la gráfica.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    final spots = _produccion7Dias.asMap().entries.map((e) {
+      final idx = e.key.toDouble();
+      final litros = (e.value['total_litros'] as num).toDouble();
+      return FlSpot(idx, litros);
+    }).toList();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.trending_up, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text('Producción Últimos 7 Días (Litros)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 30),
+          SizedBox(
+            height: 220,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withValues(alpha: 0.2), strokeWidth: 1),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        if (idx >= 0 && idx < _produccion7Dias.length) {
+                          final fecha = _produccion7Dias[idx]['fecha_corta'] as String;
+                          final day = fecha.substring(8, 10);
+                          final month = fecha.substring(5, 7);
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text('$day/$month', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 42,
+                      getTitlesWidget: (value, meta) => Text('${value.toInt()}L', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    color: Theme.of(context).colorScheme.primary,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
