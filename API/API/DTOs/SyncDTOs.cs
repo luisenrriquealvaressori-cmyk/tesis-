@@ -75,6 +75,7 @@ namespace API.DTOs
         public List<AnimalPushDto> AnimalesNuevos { get; set; } = new List<AnimalPushDto>();
         public List<ProduccionLechePushDto> ProduccionLecheNuevos { get; set; } = new List<ProduccionLechePushDto>();
         public List<RegistroSaludPushDto> RegistrosSaludNuevos { get; set; } = new List<RegistroSaludPushDto>();
+        public List<RegistroReproductivoPushDto> RegistrosReproductivosNuevos { get; set; } = new List<RegistroReproductivoPushDto>();
     }
 
     public class FincaPushDto
@@ -126,6 +127,16 @@ namespace API.DTOs
         public decimal Dosis { get; set; }
     }
 
+    public class RegistroReproductivoPushDto
+    {
+        public Guid Id { get; set; }
+        public Guid AnimalId { get; set; }
+        public string TipoEvento { get; set; } = string.Empty;
+        public DateTime FechaEvento { get; set; }
+        public Guid? ToroId { get; set; }
+        public string? Observaciones { get; set; }
+    }
+
     // =========================================================================
     // DTOs de respuesta: Descarga de datos propios del usuario (Pull User Data)
     // =========================================================================
@@ -137,6 +148,7 @@ namespace API.DTOs
         public List<FincaPullDto> Fincas { get; set; } = new();
         public List<AnimalPullDto> Animales { get; set; } = new();
         public List<ProduccionLechePullDto> Produccion { get; set; } = new();
+        public List<RegistroReproductivoPullDto> Reproduccion { get; set; } = new();
     }
 
     public class FincaPullDto
@@ -169,5 +181,15 @@ namespace API.DTOs
         public DateTime Fecha { get; set; }
         public int Jornada { get; set; }
         public decimal VolumenLitros { get; set; }
+    }
+
+    public class RegistroReproductivoPullDto
+    {
+        public Guid Id { get; set; }
+        public Guid AnimalId { get; set; }
+        public string TipoEvento { get; set; } = string.Empty;
+        public DateTime FechaEvento { get; set; }
+        public Guid? ToroId { get; set; }
+        public string? Observaciones { get; set; }
     }
 }

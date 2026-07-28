@@ -25,7 +25,7 @@ class LocalDatabase {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
       // CRÍTICO: Habilitar integridad referencial en SQLite
@@ -225,6 +225,21 @@ CREATE TABLE IF NOT EXISTS tratamientos (
 )
 ''');
 
+    /// Registros reproductivos de un animal
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS registros_reproductivos (
+  id             TEXT PRIMARY KEY,
+  animal_id      TEXT NOT NULL,
+  tipo_evento    TEXT NOT NULL,
+  fecha_evento   TEXT NOT NULL,
+  toro_id        TEXT,
+  observaciones  TEXT,
+  is_synced      INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (animal_id) REFERENCES animales(id)
+    ON DELETE CASCADE ON UPDATE NO ACTION
+)
+''');
+
     // Índices para acelerar consultas frecuentes
     await db.execute('CREATE INDEX IF NOT EXISTS idx_animales_finca_id ON animales(finca_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_animales_is_synced ON animales(is_synced)');
@@ -235,6 +250,7 @@ CREATE TABLE IF NOT EXISTS tratamientos (
     await db.execute('CREATE INDEX IF NOT EXISTS idx_sintomas_enfermedad_id ON sintomas(enfermedad_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_municipios_depto_id ON municipios(departamento_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_comarcas_municipio_id ON comarcas(municipio_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_reproductivos_animal_id ON registros_reproductivos(animal_id)');
   }
 
   // =========================================================================
@@ -282,6 +298,23 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
 ''');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_sintomas_enfermedad_id ON sintomas(enfermedad_id);');
     }
+
+    if (oldVersion < 5) {
+      await db.execute('''
+CREATE TABLE IF NOT EXISTS registros_reproductivos (
+  id             TEXT PRIMARY KEY,
+  animal_id      TEXT NOT NULL,
+  tipo_evento    TEXT NOT NULL,
+  fecha_evento   TEXT NOT NULL,
+  toro_id        TEXT,
+  observaciones  TEXT,
+  is_synced      INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (animal_id) REFERENCES animales(id)
+    ON DELETE CASCADE ON UPDATE NO ACTION
+)
+''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_reproductivos_animal_id ON registros_reproductivos(animal_id)');
+    }
   }
 
   // =========================================================================
@@ -315,37 +348,37 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
       }
 
       for (final d in departamentos) {
-        await txn.insert('departamentos', d, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('departamentos', d, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final m in municipios) {
         final item = Map<String, dynamic>.from(m);
         if (item['departamento_id'] is String && (item['departamento_id'] as String).trim().isEmpty) {
           item['departamento_id'] = null;
         }
-        await txn.insert('municipios', item, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('municipios', item, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final c in comarcas) {
         final item = Map<String, dynamic>.from(c);
         if (item['municipio_id'] is String && (item['municipio_id'] as String).trim().isEmpty) {
           item['municipio_id'] = null;
         }
-        await txn.insert('comarcas', item, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('comarcas', item, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final r in razas) {
-        await txn.insert('razas', r, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('razas', r, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final e in enfermedades) {
-        await txn.insert('enfermedades', e, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('enfermedades', e, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final s in sintomas) {
         final item = Map<String, dynamic>.from(s);
         if (item['enfermedad_id'] is String && (item['enfermedad_id'] as String).trim().isEmpty) {
           item['enfermedad_id'] = null;
         }
-        await txn.insert('sintomas', item, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('sintomas', item, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
       for (final m in medicamentos) {
-        await txn.insert('medicamentos', m, conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert('medicamentos', m, conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     });
   }
@@ -622,7 +655,7 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
     return await db.rawQuery('''
       SELECT 
         substr(pl.fecha, 1, 10) as fecha_corta,
-        SUM(pl.litros) as total_litros
+        SUM(pl.volumen_litros) as total_litros
       FROM produccion_leche pl
       INNER JOIN animales a ON pl.animal_id = a.id
       WHERE a.finca_id = ?
@@ -744,6 +777,31 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
   }
 
   // =========================================================================
+  // REGISTROS REPRODUCTIVOS
+  // =========================================================================
+  Future<void> insertRegistroReproductivo(Map<String, dynamic> registro) async {
+    final db = await instance.database;
+    await db.insert(
+      'registros_reproductivos',
+      registro,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getRegistrosReproductivosByAnimal(String animalId) async {
+    final db = await instance.database;
+    return await db.query('registros_reproductivos',
+        where: 'animal_id = ?',
+        whereArgs: [animalId],
+        orderBy: 'fecha_evento DESC');
+  }
+
+  Future<List<Map<String, dynamic>>> getUnsyncedRegistrosReproductivos() async {
+    final db = await instance.database;
+    return await db.query('registros_reproductivos', where: 'is_synced = ?', whereArgs: [0]);
+  }
+
+  // =========================================================================
   // SYNC: Conteo de registros pendientes
   // =========================================================================
 
@@ -751,7 +809,7 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
     final db = await instance.database;
     int count = 0;
 
-    final tables = ['fincas', 'animales', 'produccion_leche', 'registros_salud', 'tratamientos'];
+    final tables = ['fincas', 'animales', 'produccion_leche', 'registros_salud', 'tratamientos', 'registros_reproductivos'];
     for (final table in tables) {
       final result = await db.rawQuery('SELECT COUNT(*) FROM $table WHERE is_synced = 0');
       count += Sqflite.firstIntValue(result) ?? 0;
@@ -796,6 +854,7 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
       await txn.delete('registro_salud_sintomas');
       await txn.delete('tratamientos');
       await txn.delete('registros_salud');
+      await txn.delete('registros_reproductivos');
       await txn.delete('produccion_leche');
       await txn.delete('animales');
       await txn.delete('fincas');

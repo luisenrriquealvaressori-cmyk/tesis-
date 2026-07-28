@@ -98,6 +98,12 @@ namespace API.Controllers
                 .AsNoTracking()
                 .ToListAsync();
 
+            // Registros Reproductivos
+            var reproduccion = await _context.RegistrosReproductivos
+                .Where(r => animalIds.Contains(r.AnimalId) && !r.IsDeleted)
+                .AsNoTracking()
+                .ToListAsync();
+
             var response = new UserDataPullResponse
             {
                 Fincas = fincas.Select(f => new FincaPullDto
@@ -130,6 +136,16 @@ namespace API.Controllers
                     Fecha = p.Fecha,
                     Jornada = (int)p.Jornada,
                     VolumenLitros = p.VolumenLitros
+                }).ToList(),
+
+                Reproduccion = reproduccion.Select(r => new RegistroReproductivoPullDto
+                {
+                    Id = r.Id,
+                    AnimalId = r.AnimalId,
+                    TipoEvento = r.TipoEvento,
+                    FechaEvento = r.FechaEvento,
+                    ToroId = r.ToroId,
+                    Observaciones = r.Observaciones
                 }).ToList()
             };
 
@@ -347,6 +363,51 @@ namespace API.Controllers
                             UsuarioAppId = usuarioIdJwt,
                             FincaId = existing.Animal?.FincaId,
                             TipoEntidad = "RegistroSalud",
+                            Accion = "Update"
+                        });
+                    }
+                }
+
+                // PRE-FETCH REGISTROS REPRODUCTIVOS
+                var rrIds = request.RegistrosReproductivosNuevos.Select(r => r.Id).ToList();
+                var existingRR = await _context.RegistrosReproductivos.Where(r => rrIds.Contains(r.Id)).ToDictionaryAsync(r => r.Id);
+
+                foreach (var rrDto in request.RegistrosReproductivosNuevos)
+                {
+                    if (!existingRR.TryGetValue(rrDto.Id, out var existing))
+                    {
+                        _context.RegistrosReproductivos.Add(new RegistroReproductivo
+                        {
+                            Id = rrDto.Id,
+                            AnimalId = rrDto.AnimalId,
+                            TipoEvento = rrDto.TipoEvento,
+                            FechaEvento = rrDto.FechaEvento,
+                            ToroId = rrDto.ToroId,
+                            Observaciones = rrDto.Observaciones
+                        });
+                        
+                        var fincaDelAnimal = await _context.Animales
+                            .Where(a => a.Id == rrDto.AnimalId)
+                            .Select(a => (Guid?)a.FincaId)
+                            .FirstOrDefaultAsync();
+                        _context.AuditoriaLogs.Add(new AuditoriaSync {
+                            UsuarioAppId = usuarioIdJwt,
+                            FincaId = fincaDelAnimal,
+                            TipoEntidad = "RegistroReproductivo",
+                            Accion = "Insert"
+                        });
+                    }
+                    else
+                    {
+                        existing.TipoEvento = rrDto.TipoEvento;
+                        existing.FechaEvento = rrDto.FechaEvento;
+                        existing.ToroId = rrDto.ToroId;
+                        existing.Observaciones = rrDto.Observaciones;
+                        
+                        _context.AuditoriaLogs.Add(new AuditoriaSync {
+                            UsuarioAppId = usuarioIdJwt,
+                            FincaId = existing.Animal?.FincaId,
+                            TipoEntidad = "RegistroReproductivo",
                             Accion = "Update"
                         });
                     }

@@ -139,6 +139,8 @@ class SyncProvider extends ChangeNotifier {
       final produccion = await LocalDatabase.instance.getUnsyncedProduccion();
       final registrosSalud =
           await LocalDatabase.instance.getUnsyncedRegistrosSalud();
+      final registrosReproductivos =
+          await LocalDatabase.instance.getUnsyncedRegistrosReproductivos();
 
       // 2. Construir el payload para POST /api/sync/push
       final payload = {
@@ -147,6 +149,7 @@ class SyncProvider extends ChangeNotifier {
         'animalesNuevos': animales.map(_mapAnimal).toList(),
         'produccionLecheNuevos': produccion.map(_mapProduccion).toList(),
         'registrosSaludNuevos': registrosSalud.map(_mapRegistroSalud).toList(),
+        'registrosReproductivosNuevos': registrosReproductivos.map(_mapRegistroReproductivo).toList(),
       };
 
       // 3. Enviar al servidor con backoff exponencial
@@ -178,6 +181,10 @@ class SyncProvider extends ChangeNotifier {
               .markAsSynced('registros_salud', rs['id'] as String);
           await LocalDatabase.instance
               .markTratamientosAsSyncedByRegistro(rs['id'] as String);
+        }
+        for (final rr in registrosReproductivos) {
+          await LocalDatabase.instance
+              .markAsSynced('registros_reproductivos', rr['id'] as String);
         }
 
         await refreshPendingCount();
@@ -315,6 +322,20 @@ class SyncProvider extends ChangeNotifier {
           });
         }
 
+        // Insertar reproducción del servidor
+        final reproduccion = (data['reproduccion'] as List<dynamic>?) ?? [];
+        for (final r in reproduccion) {
+          await LocalDatabase.instance.insertRegistroReproductivo({
+            'id': r['id'],
+            'animal_id': r['animalId'],
+            'tipo_evento': r['tipoEvento'],
+            'fecha_evento': r['fechaEvento'],
+            'toro_id': r['toroId'],
+            'observaciones': r['observaciones'],
+            'is_synced': 1, // Ya está en el servidor
+          });
+        }
+
         await refreshPendingCount();
         return true;
       }
@@ -371,6 +392,15 @@ class SyncProvider extends ChangeNotifier {
                     })
                 .toList() ??
             [],
+      };
+
+  Map<String, dynamic> _mapRegistroReproductivo(Map<String, dynamic> rr) => {
+        'id': rr['id'],
+        'animalId': rr['animal_id'],
+        'tipoEvento': rr['tipo_evento'],
+        'fechaEvento': rr['fecha_evento'],
+        'toroId': rr['toro_id'],
+        'observaciones': rr['observaciones'],
       };
 
   @override

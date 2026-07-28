@@ -33,6 +33,7 @@ namespace API.Data
         public DbSet<RegistroSalud> RegistrosSalud { get; set; }
         public DbSet<RegistroSaludSintoma> RegistroSaludSintomas { get; set; }
         public DbSet<Tratamiento> Tratamientos { get; set; }
+        public DbSet<RegistroReproductivo> RegistrosReproductivos { get; set; }
         public DbSet<AuditoriaSync> AuditoriaLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,6 +43,7 @@ namespace API.Data
             // ----------------------------------------------------------------
             // NOMBRES DE TABLAS PARA CATÁLOGOS (Compatibilidad con Script SQL)
             // ----------------------------------------------------------------
+            modelBuilder.Entity<RegistroReproductivo>().ToTable("registros_reproductivos");
             modelBuilder.Entity<Departamento>().ToTable("departamentos");
             modelBuilder.Entity<Municipio>().ToTable("municipios");
             modelBuilder.Entity<Comarca>().ToTable("comarcas");
