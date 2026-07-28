@@ -461,10 +461,11 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
     return (result.first['total'] as num?)?.toDouble() ?? 0.0;
   }
 
-  /// Últimos registros de salud de la finca (para dashboard).
+  /// Registros de salud de la finca (para dashboard y consulta).
   Future<List<Map<String, dynamic>>> getUltimosRegistrosSalud(
-      String fincaId, {int limite = 3}) async {
+      String fincaId, {int? limite}) async {
     final db = await instance.database;
+    final limitClause = (limite != null && limite > 0) ? 'LIMIT $limite' : '';
     return await db.rawQuery('''
       SELECT
         rs.id,
@@ -478,8 +479,8 @@ CREATE TABLE IF NOT EXISTS registro_salud_sintomas (
       INNER JOIN enfermedades e ON rs.enfermedad_id = e.id
       WHERE a.finca_id = ? AND rs.is_deleted = 0
       ORDER BY rs.fecha_deteccion DESC
-      LIMIT ?
-    ''', [fincaId, limite]);
+      $limitClause
+    ''', [fincaId]);
   }
 
   /// Historial médico de un animal específico con enfermedad y medicamentos.

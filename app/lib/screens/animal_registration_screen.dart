@@ -241,8 +241,9 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
                                   onTap: () => setState(() => _sexo = 1),
                                   child: _buildSexoButton(
                                     icon: Icons.female,
-                                    label: 'Hembra',
+                                    label: 'Hembra ♀',
                                     isSelected: _sexo == 1,
+                                    activeColor: Colors.pink.shade600,
                                     borderRadius: const BorderRadius.horizontal(
                                         left: Radius.circular(8)),
                                   ),
@@ -253,8 +254,9 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
                                   onTap: () => setState(() => _sexo = 2),
                                   child: _buildSexoButton(
                                     icon: Icons.male,
-                                    label: 'Macho',
+                                    label: 'Macho ♂',
                                     isSelected: _sexo == 2,
+                                    activeColor: Colors.blue.shade700,
                                     borderRadius: const BorderRadius.horizontal(
                                         right: Radius.circular(8)),
                                   ),
@@ -405,24 +407,28 @@ class _AnimalRegistrationScreenState extends State<AnimalRegistrationScreen> {
     required IconData icon,
     required String label,
     required bool isSelected,
+    required Color activeColor,
     required BorderRadius borderRadius,
   }) {
-    final color = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: isSelected ? color.primaryContainer : color.surfaceContainerHighest,
+        color: isSelected ? activeColor : Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: borderRadius,
+        border: Border.all(
+          color: isSelected ? activeColor : Theme.of(context).colorScheme.outlineVariant,
+          width: isSelected ? 2 : 1,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: isSelected ? Colors.white : Colors.black87),
+          Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade700),
           const SizedBox(width: 8),
           Text(label,
               style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.bold)),
+                  color: isSelected ? Colors.white : Colors.grey.shade800,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );
@@ -477,10 +483,10 @@ class _GanadoScreenState extends State<GanadoScreen> {
 
   List<Map<String, dynamic>> get _animalesFiltrados {
     if (_filtroSexo == 'hembras') {
-      return _animales.where((a) => (a['sexo'] as int) == 2).toList();
+      return _animales.where((a) => (a['sexo'] as int) == 1).toList();
     }
     if (_filtroSexo == 'machos') {
-      return _animales.where((a) => (a['sexo'] as int) == 1).toList();
+      return _animales.where((a) => (a['sexo'] as int) == 2).toList();
     }
     return _animales;
   }
@@ -525,8 +531,8 @@ class _GanadoScreenState extends State<GanadoScreen> {
   @override
   Widget build(BuildContext context) {
     final filtrados = _animalesFiltrados;
-    final totalHembras = _animales.where((a) => (a['sexo'] as int) == 2).length;
-    final totalMachos = _animales.where((a) => (a['sexo'] as int) == 1).length;
+    final totalHembras = _animales.where((a) => (a['sexo'] as int) == 1).length;
+    final totalMachos = _animales.where((a) => (a['sexo'] as int) == 2).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -638,7 +644,7 @@ class _GanadoScreenState extends State<GanadoScreen> {
   }
 
   Widget _buildAnimalCard(Map<String, dynamic> animal) {
-    final esMacho = (animal['sexo'] as int) == 1;
+    final esMacho = (animal['sexo'] as int) == 2;
     final proposito = (animal['raza_proposito'] as int?) ?? 3;
     final synced = (animal['is_synced'] as int) == 1;
 

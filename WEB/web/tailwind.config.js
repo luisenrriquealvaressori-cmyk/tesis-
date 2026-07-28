@@ -67,13 +67,13 @@ export default {
         "xl": "32px"
       },
       fontFamily: {
-        "headline-lg": ["Inter", "sans-serif"],
+        "headline-lg": ["Outfit", "Inter", "sans-serif"],
         "body-md": ["Inter", "sans-serif"],
         "label-sm": ["Inter", "sans-serif"],
         "label-md": ["Inter", "sans-serif"],
-        "headline-lg-mobile": ["Inter", "sans-serif"],
-        "headline-xl": ["Inter", "sans-serif"],
-        "title-md": ["Inter", "sans-serif"],
+        "headline-lg-mobile": ["Outfit", "Inter", "sans-serif"],
+        "headline-xl": ["Outfit", "Inter", "sans-serif"],
+        "title-md": ["Outfit", "Inter", "sans-serif"],
         "body-lg": ["Inter", "sans-serif"]
       },
       fontSize: {

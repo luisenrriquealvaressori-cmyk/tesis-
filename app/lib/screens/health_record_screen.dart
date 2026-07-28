@@ -151,7 +151,11 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        context.pop();
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          _resetForm();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -160,6 +164,19 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
     } finally {
       setState(() => _isSaving = false);
     }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _selectedAnimal = null;
+      _selectedEnfermedad = null;
+      _selectedMedicamento = null;
+      _sintomasDisponibles.clear();
+      _sintomasSeleccionados.clear();
+      _medicamentosSugeridos.clear();
+      _dosisController.clear();
+      _observacionesController.clear();
+    });
   }
 
   void _showError(String msg) {
@@ -227,7 +244,7 @@ class _HealthRecordScreenState extends State<HealthRecordScreen> {
                                   ),
                                   items: _animales,
                                   itemAsString: (a) =>
-                                      '${a['identificacion']} — ${a['sexo'] == 2 ? '♀' : '♂'}',
+                                      '${a['identificacion']} — ${a['sexo'] == 2 ? '♂' : '♀'}',
                                   dropdownDecoratorProps:
                                       const DropDownDecoratorProps(
                                     dropdownSearchDecoration: InputDecoration(

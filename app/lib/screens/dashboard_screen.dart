@@ -265,8 +265,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 28),
 
-              // Registros de salud recientes
-              Text('Últimos Eventos de Salud', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 28),
+
+              // Registros de salud de la finca
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Eventos de Salud del Hato (${_ultimosRegistros.length})',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline, color: Colors.teal),
+                    tooltip: 'Nuevo Registro de Salud',
+                    onPressed: () async {
+                      await context.push('/health_record');
+                      _loadDashboardData();
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               if (_ultimosRegistros.isEmpty)
                 Container(
@@ -277,7 +295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: const Text('No hay eventos de salud recientes registrados.', style: TextStyle(color: Colors.grey)),
+                  child: const Text('No hay eventos de salud registrados en la finca.', style: TextStyle(color: Colors.grey)),
                 )
               else
                 ListView.builder(
@@ -286,15 +304,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemCount: _ultimosRegistros.length,
                   itemBuilder: (context, index) {
                     final reg = _ultimosRegistros[index];
+                    final esObligatorio = (reg['notificacion_obligatoria'] as int?) == 1;
+                    final fechaStr = reg['fecha_deteccion'] != null && reg['fecha_deteccion'].toString().length >= 10
+                        ? reg['fecha_deteccion'].toString().substring(0, 10)
+                        : '—';
+                    final observaciones = (reg['observaciones'] as String?)?.trim();
+
                     return Card(
+                      elevation: 0.5,
                       margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey.shade200),
+                      ),
                       child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.redAccent,
-                          child: Icon(Icons.local_hospital, color: Colors.white, size: 20),
+                        leading: CircleAvatar(
+                          backgroundColor: esObligatorio ? Colors.red.shade700 : Colors.teal.shade600,
+                          child: Icon(
+                            esObligatorio ? Icons.warning_amber_rounded : Icons.medical_services,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
-                        title: Text('Animal: ${reg['animal_id']} - ${reg['enfermedad_nombre']}'),
-                        subtitle: Text('Fecha: ${reg['fecha_deteccion'].toString().substring(0, 10)}'),
+                        title: Row(
+                          children: [
+                            Text(
+                              'Arete ${reg['animal_id']}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                reg['enfermedad_nombre'] as String? ?? 'Diagnóstico Desconocido',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: esObligatorio ? Colors.red.shade800 : Colors.black87,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '📅 Detección: $fechaStr',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                              ),
+                              if (observaciones != null && observaciones.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2.0),
+                                  child: Text(
+                                    '📝 $observaciones',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -305,9 +378,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index == 1) context.push('/ganado');
-          if (index == 2) context.push('/sync');
+        onTap: (index) async {
+          if (index == 1) {
+            await context.push('/ganado');
+            _loadDashboardData();
+          }
+          if (index == 2) {
+            await context.push('/health_record');
+            _loadDashboardData();
+          }
         },
       ),
     );
