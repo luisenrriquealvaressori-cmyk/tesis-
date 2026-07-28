@@ -303,7 +303,7 @@ namespace API.Controllers
             if (string.IsNullOrWhiteSpace(req.ClaveNueva) || req.ClaveNueva.Length < 6)
                 return BadRequest(new { error = "La nueva contraseña debe tener al menos 6 caracteres." });
 
-            var usuarioApp = await _context.Usuarios
+            var usuarioApp = await _context.UsuariosApp
                 .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
 
             if (usuarioApp is null)
